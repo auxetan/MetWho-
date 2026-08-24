@@ -295,6 +295,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 92NDDAKFL6;
 				GENERATE_INFOPLIST_FILE = YES;
 				CODE_SIGN_ENTITLEMENTS = MetWho/MetWho.entitlements;
 				MARKETING_VERSION = 1.0.0;
@@ -321,6 +322,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 92NDDAKFL6;
 				GENERATE_INFOPLIST_FILE = YES;
 				CODE_SIGN_ENTITLEMENTS = MetWho/MetWho.entitlements;
 				MARKETING_VERSION = 1.0.0;
@@ -347,6 +349,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MetWhoWidget/MetWhoWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 92NDDAKFL6;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MetWhoWidget/Info.plist;
@@ -366,6 +369,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MetWhoWidget/MetWhoWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 92NDDAKFL6;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MetWhoWidget/Info.plist;
