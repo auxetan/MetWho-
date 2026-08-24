@@ -567,7 +567,7 @@ struct SearchScreen: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Ask AI").font(.system(size: 16, weight: .heavy)).tracking(-0.4)
                         .foregroundStyle(Color.ink)
-                    Text("Answers from everything you have written")
+                    Text("Ask a question, then press return")
                         .font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.ink2)
                         .lineLimit(1)
                 }
@@ -578,6 +578,20 @@ struct SearchScreen: View {
         }
         .buttonStyle(.plain)
         .glass()
+    }
+
+    /// Runs the question, on return and nowhere else.
+    private func askNow() {
+        guard let question = term.aiQuestion else { return }
+        asking = true
+        answer = nil
+        Task {
+            let reply = await Intelligence.shared.ask(question, everyone: store.people)
+            withAnimation(.smooth) {
+                answer = reply ?? "No answer to that."
+                asking = false
+            }
+        }
     }
 
     /// The answer sits above the matches rather than replacing them: asking a
@@ -640,6 +654,7 @@ struct SearchScreen: View {
                         .foregroundStyle(Color.ink)
                         .focused($focused)
                         .autocorrectionDisabled()
+                        .submitLabel(term.aiQuestion == nil ? .search : .go)
                 }
                 .padding(.horizontal, 19).frame(height: 52)
                 .glass()
@@ -654,7 +669,7 @@ struct SearchScreen: View {
                         Text("Search people and memories.\nType @AI to ask a question instead.")
                             .multilineTextAlignment(.center).snipText().padding(.top, 60)
                     } else if hits.isEmpty && answer == nil && !asking {
-                        Text(term.aiQuestion == nil ? "Nothing on that." : "No answer to that.")
+                        Text(term.aiQuestion == nil ? "Nothing on that." : "Press return to ask.")
                             .snipText().padding(.top, 60)
                     } else if !hits.isEmpty {
                         VStack(spacing: 0) {
@@ -693,20 +708,13 @@ struct SearchScreen: View {
             try? await Task.sleep(nanoseconds: 450_000_000)
             guard !Task.isCancelled else { return }
 
-            // "@AI who is Jean?" is a question to answer, not a string to match
-            if let question = q.aiQuestion {
-                asking = true
-                answer = nil
-                let reply = await Intelligence.shared.ask(question, everyone: store.people)
-                guard !Task.isCancelled else { return }
-                withAnimation(.smooth) {
-                    answer = reply ?? "No answer to that."
-                    asking = false
-                }
-                return
-            }
+            // a question waits for return. Answering a half-typed one costs a
+            // request and puts a confident wrong answer on screen while the
+            // user is still saying what they meant
+            guard q.aiQuestion == nil else { return }
             understood = await Intelligence.shared.answer(q, over: store.people) ?? []
         }
+        .onSubmit(of: .text) { askNow() }
     }
 }
 
