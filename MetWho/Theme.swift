@@ -230,6 +230,97 @@ struct CircleButton: View {
     }
 }
 
+/// Swipe-left actions for a card that is not in a `List`.
+///
+/// The feed is a `LazyVStack` of floating cards on a 12pt rhythm, so
+/// `.swipeActions` is not available — it only exists inside `List`, and a `List`
+/// would bring its own separators, insets and background that the whole design
+/// spends its time removing. This is the same gesture rebuilt: Archive in grey,
+/// Delete in red at the outer edge, and a full swipe that deletes outright the
+/// way Notes does.
+///
+/// Both actions are undoable through the toast, which is what makes a one-gesture
+/// delete acceptable at all.
+struct SwipeRow<Content: View>: View {
+    let onTap: () -> Void
+    let onArchive: () -> Void
+    let onDelete: () -> Void
+    @ViewBuilder var content: Content
+
+    @State private var offset: CGFloat = 0
+    @State private var open = false
+
+    private let button: CGFloat = 82
+    private var revealed: CGFloat { button * 2 }
+    /// Past this the gesture stops being "show me the options" and becomes the
+    /// destructive one on its own.
+    private let commit: CGFloat = 250
+
+    var body: some View {
+        ZStack(alignment: .trailing) {
+            HStack(spacing: 0) {
+                action(icon: "archivebox.fill", label: "Archive", tint: Color.ink2) {
+                    close(); onArchive()
+                }
+                action(icon: "trash.fill", label: "Delete", tint: Color.danger) {
+                    close(); onDelete()
+                }
+            }
+            .frame(width: revealed)
+            .clipShape(RoundedRectangle(cornerRadius: M.rCard, style: .continuous))
+
+            // deliberately not a Button: a Button's own gesture wins the
+            // competition against a parent drag, so the card never moved. A tap
+            // gesture composes with the drag instead.
+            content
+                .offset(x: offset)
+                .contentShape(Rectangle())
+                .onTapGesture { open ? close() : onTap() }
+                .gesture(
+                    DragGesture(minimumDistance: 18, coordinateSpace: .local)
+                        .onChanged { g in
+                            // vertical intent belongs to the scroll view, not here
+                            guard abs(g.translation.width) > abs(g.translation.height) else { return }
+                            let base = open ? -revealed : 0
+                            offset = min(0, base + g.translation.width)
+                        }
+                        .onEnded { g in
+                            let base = open ? -revealed : 0
+                            let total = base + g.translation.width
+                            if total < -commit {
+                                withAnimation(.smooth(duration: 0.25)) { offset = -600 }
+                                onDelete()
+                            } else if total < -revealed / 2 {
+                                withAnimation(.snappy) { offset = -revealed; open = true }
+                            } else {
+                                withAnimation(.snappy) { offset = 0; open = false }
+                            }
+                        }
+                )
+        }
+        .onDisappear { offset = 0; open = false }
+    }
+
+    private func close() {
+        withAnimation(.snappy) { offset = 0; open = false }
+    }
+
+    private func action(icon: String, label: String, tint: Color, run: @escaping () -> Void) -> some View {
+        Button(action: run) {
+            VStack(spacing: 5) {
+                Image(systemName: icon).font(.system(size: 18, weight: .bold))
+                Text(label).font(.system(size: 12, weight: .heavy)).tracking(-0.2)
+            }
+            .foregroundStyle(.white)
+            .frame(width: button)
+            .frame(maxHeight: .infinity)
+            .background(tint)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 struct CTA: View {
     let title: String
     var icon: String? = nil
