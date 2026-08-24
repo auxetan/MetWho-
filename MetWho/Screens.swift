@@ -759,18 +759,23 @@ struct CaptureSheet: View {
                             .font(.system(size: 17, weight: .semibold)).foregroundStyle(Color.ink3)
                             .padding(.top, 8).padding(.leading, 5)
                     }
+                    // 346 is the card's min-height in S2; the editor sits inside
+                    // 20pt of padding on each side of it
                     TextEditor(text: text)
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(Color.ink)
                         .scrollContentBackground(.hidden)
                         .focused($focused)
-                        .frame(minHeight: 290)
+                        .frame(minHeight: 306)
                 }
                 .padding(20)
                 .floatCard()
                 .padding(.horizontal, M.gutter).padding(.top, 56)
 
-                Spacer()
+                // TextEditor takes every point it is offered, so without a floor
+                // reserved here the card grew past the toolbar and ran off the
+                // bottom of the screen with the buttons floating on top of it
+                Spacer(minLength: M.circle + 46)
             }
 
             // sits in the bottom layer, not the scrolling content, so it can never
