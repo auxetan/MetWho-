@@ -26,12 +26,18 @@ extension Color {
     /// control — the bin, once it has something to delete — which is what keeps
     /// it meaning "this destroys something" rather than becoming decoration.
     static let danger      = dyn(0xE5322D, 0xFF6961)
-    /// Apple's own swipe-action colours, sampled from `systemRed` and
-    /// `systemGray`. The app is otherwise monochrome, but this gesture is one
-    /// people already know from Mail and Notes, and getting the red almost right
-    /// is worse than not matching at all.
-    static let swipeDelete  = Color(UIColor.systemRed)
-    static let swipeArchive = Color(UIColor.systemGray)
+    /// Swipe actions, in values rather than hues.
+    ///
+    /// Rule 2 of the art direction: "Zero colour. Black, white, grey. Colour in
+    /// this app would be noise." A systemRed panel borrowed from Mail is exactly
+    /// the noise it means. Severity is carried the way the FAB carries emphasis —
+    /// by going to the far end of the value scale. Archive sits mid-grey, Delete
+    /// goes to the strongest value the mode allows, so the destructive one is
+    /// unmistakable without a single degree of saturation.
+    static let swipeArchive    = dyn(0xAEAEB2, 0x48484A)
+    static let swipeArchiveInk = dyn(0xFFFFFF, 0xFFFFFF)
+    static let swipeDelete     = dyn(0x0E0E0E, 0xF2F2F2)
+    static let swipeDeleteInk  = dyn(0xFFFFFF, 0x0E0E0E)
     static let hairline    = dyn(0xE7E7E7, 0x333333)
     static let fillSoft    = dyn(0xE9E9EB, 0x2C2C2E)
     static let avatarBG    = dyn(0xEEEEEE, 0x2E2E2E)
@@ -296,13 +302,13 @@ struct SwipeRow<Content: View>: View {
                 // it slides out of the way rather than fading: a full swipe is
                 // one continuous movement, not a change of mind
                 if !committing {
-                    label(icon: "archivebox.fill", text: "Archive")
+                    label(icon: "archivebox.fill", text: "Archive", ink: .swipeArchiveInk)
                         .frame(width: button)
                         .background(Color.swipeArchive)
                         .onTapGesture { close(); onArchive() }
                         .transition(.move(edge: .trailing).combined(with: .opacity))
                 }
-                label(icon: "trash.fill", text: "Delete")
+                label(icon: "trash.fill", text: "Delete", ink: .swipeDeleteInk)
                     .frame(width: committing ? max(pulled, button) : button)
                     .onTapGesture { close(); onDelete() }
             }
@@ -311,12 +317,13 @@ struct SwipeRow<Content: View>: View {
         .animation(.snappy, value: committing)
     }
 
-    private func label(icon: String, text: String) -> some View {
+    private func label(icon: String, text: String, ink: Color) -> some View {
         VStack(spacing: 5) {
-            Image(systemName: icon).font(.system(size: 19, weight: .semibold))
-            Text(text).font(.system(size: 12, weight: .semibold)).tracking(-0.1)
+            Image(systemName: icon).font(.system(size: 19, weight: .bold))
+            // rule 3: everything is ExtraBold, this label included
+            Text(text).font(.system(size: 12, weight: .heavy)).tracking(-0.1)
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(ink)
         .frame(maxHeight: .infinity)
         .contentShape(Rectangle())
     }
