@@ -26,6 +26,12 @@ extension Color {
     /// control — the bin, once it has something to delete — which is what keeps
     /// it meaning "this destroys something" rather than becoming decoration.
     static let danger      = dyn(0xE5322D, 0xFF6961)
+    /// Apple's own swipe-action colours, sampled from `systemRed` and
+    /// `systemGray`. The app is otherwise monochrome, but this gesture is one
+    /// people already know from Mail and Notes, and getting the red almost right
+    /// is worse than not matching at all.
+    static let swipeDelete  = Color(UIColor.systemRed)
+    static let swipeArchive = Color(UIColor.systemGray)
     static let hairline    = dyn(0xE7E7E7, 0x333333)
     static let fillSoft    = dyn(0xE9E9EB, 0x2C2C2E)
     static let avatarBG    = dyn(0xEEEEEE, 0x2E2E2E)
@@ -232,15 +238,23 @@ struct CircleButton: View {
 
 /// Swipe-left actions for a card that is not in a `List`.
 ///
-/// The feed is a `LazyVStack` of floating cards on a 12pt rhythm, so
-/// `.swipeActions` is not available — it only exists inside `List`, and a `List`
-/// would bring its own separators, insets and background that the whole design
-/// spends its time removing. This is the same gesture rebuilt: Archive in grey,
-/// Delete in red at the outer edge, and a full swipe that deletes outright the
-/// way Notes does.
+/// `.swipeActions` only exists inside `List`, and a `List` would bring back the
+/// separators, insets and background the design spends its time removing. So the
+/// gesture is rebuilt, and the details that make Apple's feel right are the ones
+/// worth copying:
 ///
-/// Both actions are undoable through the toast, which is what makes a one-gesture
-/// delete acceptable at all.
+/// - **The backing fills the whole card.** The first version drew a fixed-width
+///   pill floating next to the row, which read as a separate object sliding in.
+///   Here the panel is exactly the card's frame, so the card slides *off* it.
+/// - **The backing is red the whole way.** Archive is painted on top of it. When
+///   a full swipe commits, the archive button leaves and the red is already
+///   there — nothing has to cross-fade.
+/// - **Past the reveal the finger meets resistance**, and past the commit point
+///   the delete button widens to take the row. Both are how the gesture tells
+///   you what letting go will do.
+///
+/// Both actions are undoable through the toast, which is what makes a
+/// single-gesture delete defensible at all.
 struct SwipeRow<Content: View>: View {
     let onTap: () -> Void
     let onArchive: () -> Void
@@ -249,75 +263,103 @@ struct SwipeRow<Content: View>: View {
 
     @State private var offset: CGFloat = 0
     @State private var open = false
+    @State private var dragging = false
 
-    private let button: CGFloat = 82
+    private let button: CGFloat = 78
     private var revealed: CGFloat { button * 2 }
-    /// Past this the gesture stops being "show me the options" and becomes the
-    /// destructive one on its own.
-    private let commit: CGFloat = 250
+    /// Past this, letting go deletes.
+    private var commit: CGFloat { revealed * 1.85 }
+
+    private var pulled: CGFloat { -offset }
+    private var committing: Bool { pulled > commit }
 
     var body: some View {
         ZStack(alignment: .trailing) {
-            HStack(spacing: 0) {
-                action(icon: "archivebox.fill", label: "Archive", tint: Color.ink2) {
-                    close(); onArchive()
-                }
-                action(icon: "trash.fill", label: "Delete", tint: Color.danger) {
-                    close(); onDelete()
-                }
-            }
-            .frame(width: revealed)
-            .clipShape(RoundedRectangle(cornerRadius: M.rCard, style: .continuous))
-
-            // deliberately not a Button: a Button's own gesture wins the
-            // competition against a parent drag, so the card never moved. A tap
-            // gesture composes with the drag instead.
+            backing
             content
                 .offset(x: offset)
                 .contentShape(Rectangle())
                 .onTapGesture { open ? close() : onTap() }
-                .gesture(
-                    DragGesture(minimumDistance: 18, coordinateSpace: .local)
-                        .onChanged { g in
-                            // vertical intent belongs to the scroll view, not here
-                            guard abs(g.translation.width) > abs(g.translation.height) else { return }
-                            let base = open ? -revealed : 0
-                            offset = min(0, base + g.translation.width)
-                        }
-                        .onEnded { g in
-                            let base = open ? -revealed : 0
-                            let total = base + g.translation.width
-                            if total < -commit {
-                                withAnimation(.smooth(duration: 0.25)) { offset = -600 }
-                                onDelete()
-                            } else if total < -revealed / 2 {
-                                withAnimation(.snappy) { offset = -revealed; open = true }
-                            } else {
-                                withAnimation(.snappy) { offset = 0; open = false }
-                            }
-                        }
-                )
+                // not a Button: a Button's own gesture beats a parent drag, and
+                // the card never moved
+                .gesture(drag)
         }
         .onDisappear { offset = 0; open = false }
     }
 
-    private func close() {
-        withAnimation(.snappy) { offset = 0; open = false }
+    // MARK: - Behind the card
+
+    private var backing: some View {
+        ZStack(alignment: .trailing) {
+            Color.swipeDelete
+            HStack(spacing: 0) {
+                // it slides out of the way rather than fading: a full swipe is
+                // one continuous movement, not a change of mind
+                if !committing {
+                    label(icon: "archivebox.fill", text: "Archive")
+                        .frame(width: button)
+                        .background(Color.swipeArchive)
+                        .onTapGesture { close(); onArchive() }
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
+                }
+                label(icon: "trash.fill", text: "Delete")
+                    .frame(width: committing ? max(pulled, button) : button)
+                    .onTapGesture { close(); onDelete() }
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: M.rCard, style: .continuous))
+        .animation(.snappy, value: committing)
     }
 
-    private func action(icon: String, label: String, tint: Color, run: @escaping () -> Void) -> some View {
-        Button(action: run) {
-            VStack(spacing: 5) {
-                Image(systemName: icon).font(.system(size: 18, weight: .bold))
-                Text(label).font(.system(size: 12, weight: .heavy)).tracking(-0.2)
-            }
-            .foregroundStyle(.white)
-            .frame(width: button)
-            .frame(maxHeight: .infinity)
-            .background(tint)
-            .contentShape(Rectangle())
+    private func label(icon: String, text: String) -> some View {
+        VStack(spacing: 5) {
+            Image(systemName: icon).font(.system(size: 19, weight: .semibold))
+            Text(text).font(.system(size: 12, weight: .semibold)).tracking(-0.1)
         }
-        .buttonStyle(.plain)
+        .foregroundStyle(.white)
+        .frame(maxHeight: .infinity)
+        .contentShape(Rectangle())
+    }
+
+    // MARK: - The gesture
+
+    private var drag: some Gesture {
+        DragGesture(minimumDistance: 14, coordinateSpace: .local)
+            .onChanged { g in
+                // vertical intent belongs to the scroll view
+                guard abs(g.translation.width) > abs(g.translation.height) else { return }
+                dragging = true
+                let raw = (open ? -revealed : 0) + g.translation.width
+                offset = raw > 0 ? rubberBand(raw) : -resisted(-raw)
+            }
+            .onEnded { g in
+                dragging = false
+                let raw = (open ? -revealed : 0) + g.translation.width
+                if -raw > commit {
+                    // carry it off the screen rather than snapping back first
+                    withAnimation(.snappy) { offset = -1000 }
+                    onDelete()
+                } else if -raw > revealed / 2 {
+                    withAnimation(.snappy) { offset = -revealed; open = true }
+                } else {
+                    withAnimation(.snappy) { offset = 0; open = false }
+                }
+            }
+    }
+
+    /// Past the buttons the row keeps moving, but gives less for each point of
+    /// finger travel. That falling-off is what makes the end of the gesture feel
+    /// like a physical limit instead of a number being clamped.
+    private func resisted(_ distance: CGFloat) -> CGFloat {
+        distance <= revealed ? distance : revealed + (distance - revealed) * 0.55
+    }
+
+    /// Dragging right past closed does almost nothing, which is how it should
+    /// feel: there is nothing over there.
+    private func rubberBand(_ distance: CGFloat) -> CGFloat { distance * 0.18 }
+
+    private func close() {
+        withAnimation(.snappy) { offset = 0; open = false }
     }
 }
 
