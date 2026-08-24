@@ -63,14 +63,41 @@ extension Font {
     static let tCTA     = Font.system(size: 18, weight: .heavy)
 }
 
+/// Light type on a dark ground optically gains weight: the same 800 that reads
+/// ExtraBold on white reads heavier than intended on `#242424`, and heaviest of
+/// all against the pure-black page. The heavy roles therefore step down one
+/// notch in dark so they *read* at the weight rule 3 asks for — the rule is
+/// about how the type lands, and matching the number while missing the look
+/// would be the literal reading of it.
+///
+/// The 600 roles are left alone. They bloom far less, and lightening them would
+/// walk toward the weight-400 run the rule exists to forbid.
+private struct Typo: ViewModifier {
+    let size: CGFloat
+    let tracking: CGFloat
+    let colour: Color
+    var heavy = true
+    @Environment(\.colorScheme) private var scheme
+
+    func body(content: Content) -> some View {
+        content
+            .font(.system(size: size, weight: heavy ? (scheme == .dark ? .bold : .heavy) : .semibold))
+            .tracking(tracking)
+            .foregroundStyle(colour)
+    }
+}
+
 extension View {
-    func display() -> some View { font(.tDisplay).tracking(-1.05).foregroundStyle(Color.ink) }
-    func navTitle() -> some View { font(.tNav).tracking(-0.45).foregroundStyle(Color.ink) }
-    func cardTitle() -> some View { font(.tCard).tracking(-0.55).foregroundStyle(Color.ink) }
-    func rowLabel() -> some View { font(.tRow).tracking(-0.42).foregroundStyle(Color.ink) }
-    func bodyText() -> some View { font(.tBody).tracking(-0.24).foregroundStyle(Color.ink2) }
-    func snipText() -> some View { font(.tSnip).tracking(-0.22).foregroundStyle(Color.ink2) }
-    func sectLabel() -> some View { font(.tSect).tracking(-0.4).foregroundStyle(Color.ink2) }
+    private func typo(_ size: CGFloat, _ tracking: CGFloat, _ colour: Color, heavy: Bool = true) -> some View {
+        modifier(Typo(size: size, tracking: tracking, colour: colour, heavy: heavy))
+    }
+    func display() -> some View { typo(31, -1.05, .ink) }
+    func navTitle() -> some View { typo(18, -0.45, .ink) }
+    func cardTitle() -> some View { typo(19, -0.55, .ink) }
+    func rowLabel() -> some View { typo(17, -0.42, .ink) }
+    func sectLabel() -> some View { typo(16, -0.4, .ink2) }
+    func bodyText() -> some View { typo(16, -0.24, .ink2, heavy: false) }
+    func snipText() -> some View { typo(15, -0.22, .ink2, heavy: false) }
     func metaText() -> some View { font(.tMeta).tracking(-0.13).foregroundStyle(Color.ink2) }
 }
 
