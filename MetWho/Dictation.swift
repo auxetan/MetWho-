@@ -34,6 +34,10 @@ final class Dictation {
     private(set) var status: Status = .idle
     private(set) var transcript = ""
 
+    /// Everything the recogniser has already finalised this session. `transcript`
+    /// is this plus whatever is being said right now.
+    private var settled = ""
+
     /// Follows the phone, not the developer.
     ///
     /// This was pinned to `en-US`, which meant a French user dictating French got
@@ -98,12 +102,6 @@ final class Dictation {
             try session.setCategory(.record, mode: .measurement, options: .duckOthers)
             try session.setActive(true, options: .notifyOthersOnDeactivation)
 
-            let req = SFSpeechAudioBufferRecognitionRequest()
-            req.shouldReportPartialResults = true
-            if recognizer.supportsOnDeviceRecognition { req.requiresOnDeviceRecognition = true }
-            req.addsPunctuation = true
-            request = req
-
             let input = engine.inputNode
             let format = input.outputFormat(forBus: 0)
             guard format.sampleRate > 0 else {
@@ -111,38 +109,86 @@ final class Dictation {
                 return
             }
             input.removeTap(onBus: 0)
-            input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak req] buffer, _ in
-                req?.append(buffer)
+            // the tap feeds whichever request is current, not the one that existed
+            // when the tap was installed — segments are replaced underneath it
+            input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
+                self?.request?.append(buffer)
             }
 
             engine.prepare()
             try engine.start()
             status = .listening
+            settled = ""
             transcript = ""
-
-            task = recognizer.recognitionTask(with: req) { [weak self] result, error in
-                // delivered on an arbitrary queue; the hop is what makes the UI update
-                Task { @MainActor [weak self] in
-                    guard let self else { return }
-                    if let result {
-                        // the recogniser hands back the whole utterance each time
-                        self.transcript = result.bestTranscription.formattedString
-                    }
-                    if error != nil || result?.isFinal == true {
-                        self.stop()
-                    }
-                }
-            }
+            beginSegment()
         } catch {
             status = .unavailable("Could not start the microphone.")
             teardown()
         }
     }
 
+    /// Starts one utterance's worth of recognition, and starts another when that
+    /// one ends.
+    ///
+    /// `SFSpeechRecognizer` finalises an utterance as soon as you stop talking,
+    /// and every result it hands back covers only the utterance in progress. The
+    /// first version of this assigned that result straight to `transcript` and
+    /// stopped on `isFinal`, so pausing for breath deleted everything said before
+    /// the pause. Finalised text is kept in `settled` and the recogniser is
+    /// restarted, which is also how dictation survives past the roughly one
+    /// minute a single task is allowed to run.
+    private func beginSegment() {
+        guard let recognizer, status.isListening else { return }
+
+        let req = SFSpeechAudioBufferRecognitionRequest()
+        req.shouldReportPartialResults = true
+        if recognizer.supportsOnDeviceRecognition { req.requiresOnDeviceRecognition = true }
+        req.addsPunctuation = true
+        request = req
+
+        task = recognizer.recognitionTask(with: req) { [weak self] result, error in
+            // delivered on an arbitrary queue; the hop is what makes the UI update
+            Task { @MainActor [weak self] in
+                guard let self, self.status.isListening else { return }
+
+                if let result {
+                    let heard = result.bestTranscription.formattedString
+                    if result.isFinal {
+                        self.settled = Self.joined(self.settled, heard)
+                        self.transcript = self.settled
+                    } else {
+                        self.transcript = Self.joined(self.settled, heard)
+                    }
+                }
+
+                // an ended utterance is a pause, not a decision to stop talking
+                if result?.isFinal == true || error != nil {
+                    self.task = nil
+                    self.request?.endAudio()
+                    self.request = nil
+                    self.beginSegment()
+                }
+            }
+        }
+    }
+
+    /// Joins two utterances without gluing words together or doubling a space.
+    private static func joined(_ a: String, _ b: String) -> String {
+        let left = a.trimmingCharacters(in: .whitespaces)
+        let right = b.trimmingCharacters(in: .whitespaces)
+        if left.isEmpty { return right }
+        if right.isEmpty { return left }
+        return left + " " + right
+    }
+
+    /// Leaves `transcript` alone: stopping is how you finish dictating, not how
+    /// you discard what you said. The bin button is the only thing that clears it.
     func stop() {
         guard status.isListening else { teardown(); return }
-        teardown()
+        // before teardown, so a cancellation callback still in flight sees .idle
+        // and does not start another segment
         status = .idle
+        teardown()
     }
 
     func clearError() { if case .idle = status {} else { status = .idle } }
