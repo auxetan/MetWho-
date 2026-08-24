@@ -26,6 +26,16 @@ final class Intelligence {
     private var brain: Brain? { AIConfig.shared.brain }
     var isReady: Bool { brain != nil }
 
+    /// Given to the model on every question. Without it, "moving in the autumn"
+    /// is a plan forever — the model has no way to know that autumn has been and
+    /// gone. Fixed locale so the format never depends on the phone's region.
+    private static var today: String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "d MMMM yyyy"
+        return f.string(from: .now)
+    }
+
     // MARK: - Capture
 
     /// Reads one dictated or typed sentence into a structured profile.
@@ -188,19 +198,23 @@ final class Intelligence {
 
         let corpus = people.prefix(60).map(\.dossier).joined(separator: "\n")
         let system = """
-        You search someone's notes about people they have met.
+        You search someone's notes about people they have met. Today is \(Self.today).
 
         Reply with JSON only, no prose, no code fence:
         {"hits":[{"id":0,"line":""}]}
 
         Rules:
         - "id" is the number in square brackets at the start of that person's line.
-        - "line" is the sentence from their notes that answers the question, \
-        quoted word for word.
-        - Match on meaning, not spelling: a stylist for a fashion magazine answers \
-        "who works in fashion".
-        - Only include people whose notes genuinely answer the question. An empty \
-        list is a good answer when nothing fits.
+        - "line" is the sentence from their notes that led you to them, quoted \
+        word for word.
+        - Match on meaning and on consequence, not on spelling. A stylist for a \
+        fashion magazine answers "who works in fashion". Someone noted months ago \
+        as "moving to Paris in the autumn" answers "who lives in Paris", because \
+        that autumn has passed.
+        - Dates matter: a plan made before today has probably happened, and a \
+        place someone was leaving is probably not where they are now.
+        - Only include people the notes actually point to. An empty list is a good \
+        answer when nothing fits — a wrong name is worse than no name.
         - Best match first, at most eight.
         """
         let user = "Notes:\n\(corpus)\n\nQuestion: \(q)"
@@ -271,7 +285,7 @@ final class Intelligence {
 
         let system = """
         You answer questions about the people someone has met, using the notes \
-        they wrote.
+        they wrote. Today is \(Self.today).
 
         Rules:
         - Answer in one or two sentences. This goes straight into a note or a \
@@ -280,8 +294,19 @@ final class Intelligence {
         - Reply in the language the question is written in.
         - Names in the notes are the ground truth. If someone is asked about by \
         first name only and exactly one person matches, that is them.
-        - If the notes do not answer it, say so in one short sentence. Never \
-        invent a fact about a real person.
+
+        Reason from the notes, do not just match their words:
+        - A plan made before today has probably happened. A note from June saying \
+        someone was "moving to Paris in the autumn" answers "who lives in Paris" \
+        — say they most likely do now, and say which note it came from.
+        - A job implies a field: styling shoots for a fashion magazine is working \
+        in fashion, a winemaker is working in wine.
+        - A place someone was moving away from is probably not where they are now.
+
+        Mark every inference as one. Say "probably", "most likely", "was planning \
+        to" — never state a conclusion as something the notes recorded. If the \
+        notes give you nothing to reason from, say so in one short sentence \
+        rather than guessing.
         """
 
         var user = "Everyone in the notes:\n"
@@ -483,11 +508,18 @@ extension String {
 
 extension Person {
     /// One line per person, numbered so a model can point back at an id.
+    ///
+    /// The meeting date carries its year here even though `meta` shows it without
+    /// one. "Moving in the autumn" is only resolvable against the year the note
+    /// was written, and the card's own subtitle is too terse to say.
     var dossier: String {
         let body = ([summary] + sections.flatMap(\.lines))
             .filter { !$0.isEmpty }
             .joined(separator: " ")
             .prefix(240)
-        return "[\(id)] \(name) — \(meta) — \(body)"
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "d MMM yyyy"
+        return "[\(id)] \(name) — met \(f.string(from: date)) — \(meta) — \(body)"
     }
 }
