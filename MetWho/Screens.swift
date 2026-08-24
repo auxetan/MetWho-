@@ -52,8 +52,23 @@ struct HomeScreen: View {
                             } else {
                                 LazyVStack(spacing: 12) {
                                     ForEach(store.feed) { p in
-                                        Button { path.append(.profile(p.id)) } label: { PersonCard(person: p) }
-                                            .buttonStyle(PressStyle(scale: 0.985))
+                                        SwipeRow {
+                                            path.append(.profile(p.id))
+                                        } onArchive: {
+                                            withAnimation(.smooth) { store.archive(p.id) }
+                                            toast = ToastState(message: "Archived") {
+                                                withAnimation(.smooth) { store.restore(p.id) }
+                                            }
+                                        } onDelete: {
+                                            var removed: (Person, Int)?
+                                            withAnimation(.smooth) { removed = store.delete(p.id) }
+                                            guard let (gone, at) = removed else { return }
+                                            toast = ToastState(message: "Deleted") {
+                                                withAnimation(.smooth) { store.reinsert(gone, at: at) }
+                                            }
+                                        } content: {
+                                            PersonCard(person: p)
+                                        }
                                     }
                                 }
                                 .padding(.top, 26)
