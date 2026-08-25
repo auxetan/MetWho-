@@ -765,6 +765,12 @@ struct SearchScreen: View {
 
 // MARK: - Capture
 
+/// Carries the measured height of the note's text up to the card.
+private struct TextHeight: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
+}
+
 struct CaptureSheet: View {
     @Environment(Store.self) private var store
     @Environment(\.dismiss) private var dismiss
@@ -772,6 +778,7 @@ struct CaptureSheet: View {
     @State private var typed = ""          // what the keyboard put in
     @State private var prefix = ""         // what was there when dictation started
     @State private var thinking = false    // an @AI line is out for an answer
+    @State private var grown: CGFloat = 0  // measured height of what is written
     @FocusState private var focused: Bool
     let onSave: (Int?) -> Void
 
@@ -804,14 +811,31 @@ struct CaptureSheet: View {
                             .font(.system(size: 17, weight: .semibold)).foregroundStyle(Color.ink3)
                             .padding(.top, 8).padding(.leading, 5)
                     }
-                    // 346 is the card's min-height in S2; the editor sits inside
-                    // 20pt of padding on each side of it
+                    // TextEditor takes every point it is offered, so left to
+                    // itself the card filled the screen. A twin of the same text
+                    // is laid out invisibly and measured, and the editor is given
+                    // exactly that height — the card starts small and grows with
+                    // what is written, up to a ceiling where it scrolls instead.
+                    Text(text.wrappedValue.isEmpty ? " " : text.wrappedValue)
+                        .font(.system(size: 17, weight: .semibold))
+                        .padding(.vertical, 8).padding(.horizontal, 5)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background {
+                            GeometryReader { g in
+                                Color.clear.preference(key: TextHeight.self, value: g.size.height)
+                            }
+                        }
+                        .hidden()
+
                     TextEditor(text: text)
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(Color.ink)
                         .scrollContentBackground(.hidden)
                         .focused($focused)
-                        .frame(minHeight: 306)
+                        .frame(height: min(max(grown, 132), 460))
+                }
+                .onPreferenceChange(TextHeight.self) { h in
+                    withAnimation(.snappy) { grown = h }
                 }
                 .padding(20)
                 .floatCard()
