@@ -363,12 +363,18 @@ struct ProfileScreen: View {
                                             if li > 0 { Hairline(leading: 20) }
                                             lineRow(si: si, li: li, text: line)
                                         }
+                                        // the row being written, one past the end
+                                        if editing?.section == si, editing?.line == sec.lines.count {
+                                            Hairline(leading: 20)
+                                            lineRow(si: si, li: sec.lines.count, text: "")
+                                        }
                                         Hairline(leading: 20)
                                         Button {
-                                            var q = p
-                                            q.sections[si].lines.append("")
-                                            store.update(q)
-                                            editing = (si, q.sections[si].lines.count - 1)
+                                            // the blank row lives in view state
+                                            // only: writing "" to the store left
+                                            // an empty line behind every time the
+                                            // field was abandoned before commit
+                                            editing = (si, sec.lines.count)
                                             draft = ""
                                             lineFocused = true
                                         } label: {
@@ -514,13 +520,17 @@ struct ProfileScreen: View {
         guard editing?.section == si, editing?.line == li else { return }
         editing = nil
 
-        guard var p = person, p.sections.indices.contains(si),
-              p.sections[si].lines.indices.contains(li) else { return }
+        guard var p = person, p.sections.indices.contains(si) else { return }
         let v = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        let isNew = li == p.sections[si].lines.count
         if v.isEmpty {
+            guard !isNew else { return }   // abandoned a blank row: nothing to undo
             p.sections[si].lines.remove(at: li)
             if p.sections[si].lines.isEmpty { p.sections.remove(at: si) }
+        } else if isNew {
+            p.sections[si].lines.append(v)
         } else {
+            guard p.sections[si].lines.indices.contains(li) else { return }
             p.sections[si].lines[li] = v
         }
         p.summary = String(p.sections.flatMap(\.lines).joined(separator: " ").prefix(120))

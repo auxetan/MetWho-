@@ -96,6 +96,16 @@ final class Store {
            let s = try? JSONDecoder().decode(Snapshot.self, from: data) {
             people = s.people; categories = s.categories; order = s.order
             prefs = s.prefs; nextID = s.nextID; updatedAt = s.updatedAt
+            // earlier builds wrote an empty line to the store the moment "Add a
+            // line" was tapped, so abandoning the field left a blank row behind
+            for i in people.indices {
+                for j in people[i].sections.indices {
+                    people[i].sections[j].lines.removeAll {
+                        $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    }
+                }
+                people[i].sections.removeAll { $0.lines.isEmpty }
+            }
         } else {
             firstRun()
         }
