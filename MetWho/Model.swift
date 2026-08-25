@@ -428,6 +428,41 @@ final class Store {
         }
     }
 
+    /// Adds something new to a person, under whichever heading it belongs to.
+    ///
+    /// The line lands immediately under the closest existing heading so nothing
+    /// is lost if the model is unreachable; when it answers, the line moves to
+    /// the heading it named and gets the tidier wording.
+    @MainActor
+    func addLine(_ raw: String, to id: Int) async {
+        let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty, var p = person(id) else { return }
+
+        let fallback = p.sections.last?.title ?? "Memory"
+        append(text, under: fallback, to: &p)
+        update(p)
+
+        guard let filed = await Intelligence.shared.filed(text, for: p),
+              var fresh = person(id) else { return }
+
+        // pull the placeholder back out before filing it properly
+        for i in fresh.sections.indices {
+            fresh.sections[i].lines.removeAll { $0 == text }
+        }
+        fresh.sections.removeAll { $0.lines.isEmpty }
+        append(filed.line, under: filed.heading, to: &fresh)
+        fresh.summary = String(fresh.sections.flatMap(\.lines).joined(separator: " ").prefix(120))
+        update(fresh)
+    }
+
+    private func append(_ line: String, under heading: String, to p: inout Person) {
+        if let i = p.sections.firstIndex(where: { $0.title.lowercased() == heading.lowercased() }) {
+            p.sections[i].lines.append(line)
+        } else {
+            p.sections.append(Section(title: heading, lines: [line]))
+        }
+    }
+
     // MARK: - Housekeeping
 
     /// Files whatever is sitting in Unsorted, quietly, on launch.

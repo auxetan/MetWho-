@@ -277,9 +277,9 @@ struct ProfileScreen: View {
     @Environment(Store.self) private var store
     @Environment(\.dismiss) private var dismiss
     @Binding var toast: ToastState?
-    @State private var showMenu = false
     @State private var showAssign = false
     @State private var showRefresher = false
+    @State private var showAdd = false
     @State private var editing: (section: Int, line: Int)? = nil
     @State private var draft = ""
     @State private var avatarItem: PhotosPickerItem?
@@ -296,7 +296,35 @@ struct ProfileScreen: View {
                     HStack {
                         CircleButton(icon: "chevron.left") { dismiss() }
                         Spacer()
-                        CircleButton(icon: "ellipsis") { showMenu = true }
+                        // a Menu, not a confirmationDialog: the dialog opened
+                        // centred on the screen and took a beat to arrive, where
+                        // this hangs off the button it was tapped from
+                        Menu {
+                            Button { showAssign = true } label: {
+                                Label("Change category", systemImage: "tag")
+                            }
+                            Button {
+                                store.archive(personID)
+                                dismiss()
+                                toast = ToastState(message: "Archived") { store.restore(personID) }
+                            } label: {
+                                Label("Archive", systemImage: "archivebox")
+                            }
+                            Button(role: .destructive) {
+                                if let (gone, at) = store.delete(personID) {
+                                    dismiss()
+                                    toast = ToastState(message: "Deleted") { store.reinsert(gone, at: at) }
+                                }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis")
+                                .font(.system(size: 18.7, weight: .bold))
+                                .foregroundStyle(Color.ink)
+                                .frame(width: M.circle, height: M.circle)
+                        }
+                        .glass(Circle())
                     }
                     .padding(.horizontal, M.gutter).padding(.top, 6)
 
@@ -405,25 +433,19 @@ struct ProfileScreen: View {
                 }
 
                 BottomFade()
-                CTA(title: "Refresh my memory") { showRefresher = true }
-                    .padding(.horizontal, M.gutterCTA).padding(.bottom, 6)
+                HStack(spacing: 12) {
+                    // free-writing entry: you say the thing, the app decides which
+                    // heading it belongs under
+                    CircleButton(icon: "plus") { showAdd = true }
+                    CTA(title: "Refresh my memory") { showRefresher = true }
+                }
+                .padding(.horizontal, M.gutterCTA).padding(.bottom, 6)
             }
         }
         .navigationBarHidden(true)
-        .confirmationDialog("", isPresented: $showMenu, titleVisibility: .hidden) {
-            Button("Change category") { showAssign = true }
-            Button("Archive") {
-                store.archive(personID)
-                dismiss()
-                toast = ToastState(message: "Archived") { store.restore(personID) }
-            }
-            Button("Delete", role: .destructive) {
-                if let (gone, at) = store.delete(personID) {
-                    dismiss()
-                    toast = ToastState(message: "Deleted") { store.reinsert(gone, at: at) }
-                }
-            }
-            Button("Cancel", role: .cancel) {}
+        .sheet(isPresented: $showAdd) {
+            AddLineSheet(personID: personID)
+                .presentationDetents([.height(320)]).presentationCornerRadius(34)
         }
         .sheet(isPresented: $showAssign) {
             CategorySheet(mode: .assign(personID)) { _ in }
@@ -485,7 +507,15 @@ struct ProfileScreen: View {
     }
 
     private func commit(si: Int, li: Int) {
-        guard var p = person, p.sections.indices.contains(si) else { editing = nil; return }
+        // Return fires onSubmit, which clears `editing`; the field then goes away,
+        // focus drops, and onChange(of:) calls this a second time with `draft`
+        // already emptied — so the line that had just been saved was deleted by
+        // the empty branch below. Whoever gets here first owns the edit.
+        guard editing?.section == si, editing?.line == li else { return }
+        editing = nil
+
+        guard var p = person, p.sections.indices.contains(si),
+              p.sections[si].lines.indices.contains(li) else { return }
         let v = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         if v.isEmpty {
             p.sections[si].lines.remove(at: li)
@@ -495,7 +525,6 @@ struct ProfileScreen: View {
         }
         p.summary = String(p.sections.flatMap(\.lines).joined(separator: " ").prefix(120))
         store.update(p)
-        editing = nil
 
         if let question = v.aiQuestion { answerInline(question, si: si, li: li) }
     }

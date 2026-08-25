@@ -34,9 +34,11 @@ final class Dictation {
     private(set) var status: Status = .idle
     private(set) var transcript = ""
 
-    /// Everything the recogniser has already finalised this session. `transcript`
+    /// Everything the recogniser has already banked this session. `transcript`
     /// is this plus whatever is being said right now.
     private var settled = ""
+    /// The utterance in progress, as the recogniser last reported it.
+    private var heardNow = ""
 
     /// Follows the phone, not the developer.
     ///
@@ -119,6 +121,7 @@ final class Dictation {
             try engine.start()
             status = .listening
             settled = ""
+            heardNow = ""
             transcript = ""
             beginSegment()
         } catch {
@@ -153,16 +156,23 @@ final class Dictation {
 
                 if let result {
                     let heard = result.bestTranscription.formattedString
-                    if result.isFinal {
-                        self.settled = Self.joined(self.settled, heard)
-                        self.transcript = self.settled
-                    } else {
-                        self.transcript = Self.joined(self.settled, heard)
+                    // The recogniser often begins a new utterance without ever
+                    // setting isFinal — the string simply stops extending the
+                    // last one and starts again from nothing. Keying off isFinal
+                    // alone missed that, which is why a two-second pause still
+                    // wiped everything said before it.
+                    if Self.restarted(heard, after: self.heardNow) {
+                        self.settled = Self.joined(self.settled, self.heardNow)
                     }
+                    self.heardNow = heard
+                    self.transcript = Self.joined(self.settled, heard)
                 }
 
                 // an ended utterance is a pause, not a decision to stop talking
                 if result?.isFinal == true || error != nil {
+                    self.settled = Self.joined(self.settled, self.heardNow)
+                    self.heardNow = ""
+                    self.transcript = self.settled
                     self.task = nil
                     self.request?.endAudio()
                     self.request = nil
@@ -170,6 +180,21 @@ final class Dictation {
                 }
             }
         }
+    }
+
+    /// Whether the recogniser has thrown away the utterance it was building and
+    /// started a fresh one.
+    ///
+    /// It revises what it heard as it goes — "Marie Dupont" becoming "Marie
+    /// Dupond" — so neither a plain inequality nor a prefix check works: a
+    /// correction inside the opening characters looks exactly like starting over.
+    /// What actually separates them is the first word. A revision keeps building
+    /// on the same opening; a new utterance begins somewhere else entirely.
+    private static func restarted(_ new: String, after old: String) -> Bool {
+        guard !old.isEmpty, !new.isEmpty else { return false }
+        if new.hasPrefix(old) { return false }   // still growing
+        let opening = { (s: String) in s.split(separator: " ").first?.lowercased() ?? "" }
+        return opening(old) != opening(new)
     }
 
     /// Joins two utterances without gluing words together or doubling a space.

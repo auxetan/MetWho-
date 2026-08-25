@@ -259,20 +259,21 @@ struct CircleButton: View {
 
 /// Swipe-left actions for a card that is not in a `List`.
 ///
-/// The first two attempts imported iOS's own swipe: full-height coloured panels
-/// butted together behind the row. Both were wrong for this app, and not because
-/// of the colour.
+/// `.swipeActions` only exists inside `List`, and a `List` brings back the
+/// separators, insets and background the design spends its time removing. So the
+/// gesture is rebuilt, using the app's own Circle 48 rather than iOS's coloured
+/// panels — severity rides on value, `inkIdle` against full `ink`.
 ///
-/// The shape vocabulary is four shapes and "nothing else, no right angles". A
-/// glyph button here is a Circle 48, the same one the header and the archive FAB
-/// use — so that is what the swipe reveals. Severity is carried by value, the
-/// way it is everywhere else: Archive's glyph sits at `inkIdle`, Delete's at
-/// full `ink`.
+/// Three things here are not obvious:
 ///
-/// Motion is one spring on one property. `05-motion.md` allows `.snappy` for
-/// presses and toggles and says "one thing moves at a time", which rules out the
-/// widening button and the rubber-band resistance the previous version had.
-/// Nothing here animates except the card's own x.
+/// - The drag is **simultaneous**, not exclusive. An exclusive one wins the
+///   touch from the enclosing ScrollView and the feed intermittently refuses to
+///   scroll; sharing it lets both recognisers see the finger and the direction
+///   guard below decides who acts.
+/// - The buttons sit **above** the card in z-order. Behind it they were in the
+///   revealed strip but still lost their taps, which is why Archive did nothing.
+/// - Past the buttons the row keeps moving but gives less per point of travel,
+///   and past the commit point letting go deletes outright.
 struct SwipeRow<Content: View>: View {
     let onTap: () -> Void
     let onArchive: () -> Void
@@ -281,46 +282,70 @@ struct SwipeRow<Content: View>: View {
 
     @State private var offset: CGFloat = 0
     @State private var open = false
+    /// nil until this drag has been judged horizontal or vertical
+    @State private var horizontal: Bool?
 
     /// Two Circle 48s and the gap between them.
     private var reveal: CGFloat { M.circle * 2 + 12 }
+    /// Pull past this and letting go deletes.
+    private var commit: CGFloat { reveal * 2.1 }
+
+    private var pulled: CGFloat { -offset }
 
     var body: some View {
         ZStack(alignment: .trailing) {
-            HStack(spacing: 12) {
-                CircleButton(icon: "archivebox.fill", idle: true) { close(); onArchive() }
-                CircleButton(icon: "trash.fill") { close(); onDelete() }
-            }
-            // fades with the reveal so the buttons arrive with the movement
-            // rather than sitting there waiting to be uncovered
-            .opacity(Double(min(1, -offset / reveal)))
-
             content
                 .offset(x: offset)
                 .contentShape(Rectangle())
                 .onTapGesture { open ? close() : onTap() }
-                // not a Button: a Button's own gesture beats a parent drag and
-                // the card never moves
-                .gesture(drag)
+                .simultaneousGesture(drag)
+
+            HStack(spacing: 12) {
+                CircleButton(icon: "archivebox.fill", idle: true) { close(); onArchive() }
+                CircleButton(icon: "trash.fill") { close(); onDelete() }
+            }
+            .opacity(Double(min(1, pulled / reveal)))
+            // past the commit point the row is going to be deleted on release,
+            // so offering a choice would be a lie
+            .opacity(pulled > commit ? 0 : 1)
+            .allowsHitTesting(open)
         }
         .onDisappear { offset = 0; open = false }
     }
 
     private var drag: some Gesture {
-        DragGesture(minimumDistance: 14, coordinateSpace: .local)
+        DragGesture(minimumDistance: 16, coordinateSpace: .local)
             .onChanged { g in
-                // vertical intent belongs to the scroll view
-                guard abs(g.translation.width) > abs(g.translation.height) else { return }
+                if horizontal == nil {
+                    // decided once per gesture: a drag that starts vertical stays
+                    // the scroll view's for its whole life
+                    horizontal = abs(g.translation.width) > abs(g.translation.height) * 1.4
+                }
+                guard horizontal == true else { return }
                 let raw = (open ? -reveal : 0) + g.translation.width
-                offset = max(-reveal, min(0, raw))
+                offset = raw > 0 ? raw * 0.16 : -resisted(-raw)
             }
             .onEnded { g in
+                defer { horizontal = nil }
+                guard horizontal == true else { return }
                 let raw = (open ? -reveal : 0) + g.translation.width
-                withAnimation(.snappy) {
-                    open = -raw > reveal / 2
-                    offset = open ? -reveal : 0
+                if -raw > commit {
+                    withAnimation(.smooth) { offset = -1200 }
+                    onDelete()
+                } else {
+                    withAnimation(.snappy) {
+                        open = -raw > reveal / 2
+                        offset = open ? -reveal : 0
+                    }
                 }
             }
+    }
+
+    /// Past the buttons the row still moves, but gives less for each point of
+    /// finger travel. That falling-off is what makes the pull feel like it is
+    /// straining towards something rather than sliding freely.
+    private func resisted(_ distance: CGFloat) -> CGFloat {
+        distance <= reveal ? distance : reveal + (distance - reveal) * 0.52
     }
 
     private func close() {

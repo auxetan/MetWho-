@@ -275,3 +275,60 @@ struct RefresherSheet: View {
         }
     }
 }
+
+/// Write anything about someone; the app works out where it goes.
+///
+/// The per-section "Add a line" made you pick the heading first, which is the
+/// form S2 refuses — "the user is never asked to fill in a field". Here you
+/// write the thing and it is filed for you, tidied into the card's voice, and
+/// it becomes part of what the model reads when you ask about that person later.
+struct AddLineSheet: View {
+    @Environment(Store.self) private var store
+    @Environment(\.dismiss) private var dismiss
+    @State private var text = ""
+    @FocusState private var focused: Bool
+    let personID: Int
+
+    var body: some View {
+        ZStack {
+            Color.bg.ignoresSafeArea()
+            VStack(spacing: 0) {
+                HStack {
+                    CircleButton(icon: "xmark") { dismiss() }
+                    Spacer()
+                    Text(store.person(personID)?.name ?? "Add").navTitle()
+                    Spacer()
+                    CircleButton(icon: "checkmark") { save() }
+                }
+                .padding(.horizontal, M.gutter).padding(.top, 14)
+
+                ZStack(alignment: .topLeading) {
+                    if text.isEmpty {
+                        Text("What else do you remember?")
+                            .font(.system(size: 17, weight: .semibold)).foregroundStyle(Color.ink3)
+                            .padding(.top, 8).padding(.leading, 5)
+                    }
+                    TextEditor(text: $text)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Color.ink)
+                        .scrollContentBackground(.hidden)
+                        .focused($focused)
+                        .frame(minHeight: 120)
+                }
+                .padding(20)
+                .floatCard()
+                .padding(.horizontal, M.gutter).padding(.top, 22)
+
+                Spacer(minLength: 0)
+            }
+        }
+        .onAppear { focused = true }
+    }
+
+    private func save() {
+        let line = text
+        dismiss()
+        // filed after the sheet is gone: the card behind fills itself in
+        Task { await store.addLine(line, to: personID) }
+    }
+}

@@ -185,6 +185,48 @@ final class Intelligence {
         return filed
     }
 
+    // MARK: - Filing
+
+    /// Files something new about a person: which heading it belongs under, and
+    /// the note tidied into the card's own voice.
+    ///
+    /// Adding a line used to mean choosing its section first, which is the form
+    /// the art direction refuses — "the user is never asked to fill in a field".
+    /// You write the thing; where it goes is not your problem.
+    ///
+    /// `nil` when there is no brain, and the caller files it under the section it
+    /// most resembles instead.
+    func filed(_ line: String, for person: Person) async -> (heading: String, line: String)? {
+        let text = line.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty, let brain else { return nil }
+        let headings = person.sections.map(\.title)
+        let system = """
+        You file one new note under a heading on someone's contact card.
+
+        Reply with JSON only, no prose, no code fence:
+        {"heading":"","line":""}
+
+        Rules:
+        - "heading" is one of the existing headings when the note fits under one: \
+        \(headings.isEmpty ? "there are none yet" : headings.joined(separator: ", ")).
+        - Invent a new heading only when it genuinely fits none of them, and keep \
+        it two or three words in the same style as the existing ones.
+        - "line" is the note tidied into one short statement in the third person, \
+        in the language it was written in. Fix the casing and the grammar, keep \
+        every fact, add none.
+        - Something the writer owes or intends to do belongs under a next-step \
+        heading, not with facts about the person.
+        """
+        let user = "Card for \(person.name):\n\(person.dossier)\n\nNew note: \(text)"
+
+        guard let out: RemoteFiled = await decode(brain, system: system, user: user, temperature: 0.2)
+        else { return nil }
+        let heading = out.heading.orEmpty.trimmed
+        let tidied = out.line.orEmpty.trimmed
+        guard !heading.isEmpty else { return nil }
+        return (heading, tidied.isEmpty ? text : tidied)
+    }
+
     // MARK: - Search
 
     /// Answers a plain-English (or plain-French) question against the notes.
@@ -391,6 +433,11 @@ private struct RemoteProfile: Decodable {
 private struct RemoteAnswer: Decodable {
     struct Hit: Decodable { var id: Int?; var line: String? }
     var hits: [Hit]?
+}
+
+private struct RemoteFiled: Decodable {
+    var heading: String?
+    var line: String?
 }
 
 private struct RemoteBrief: Decodable {
