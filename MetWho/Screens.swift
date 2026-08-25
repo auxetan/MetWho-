@@ -526,7 +526,13 @@ struct ProfileScreen: View {
         p.summary = String(p.sections.flatMap(\.lines).joined(separator: " ").prefix(120))
         store.update(p)
 
-        if let question = v.aiQuestion { answerInline(question, si: si, li: li) }
+        if let question = v.aiQuestion {
+            answerInline(question, si: si, li: li)
+        } else if !v.isEmpty {
+            // the section you happened to be typing in is not necessarily where
+            // the thing belongs
+            Task { await store.refile(v, of: personID) }
+        }
     }
 
     /// `@AI …` on a line answers itself where it stands.

@@ -438,21 +438,41 @@ final class Store {
         let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, var p = person(id) else { return }
 
+        // lands under the nearest heading first, so nothing is lost if the model
+        // is unreachable; refile moves it once an answer comes back
         let fallback = p.sections.last?.title ?? "Memory"
         append(text, under: fallback, to: &p)
         update(p)
+        await refile(text, of: id)
+    }
 
-        guard let filed = await Intelligence.shared.filed(text, for: p),
+    /// Moves a line to the heading it belongs under, in the wording the card
+    /// speaks in.
+    ///
+    /// Runs on anything written into a person — the free-write sheet and an
+    /// edited line alike. Writing "he only shoots film" under "Where you met"
+    /// should not leave it there just because that is the row you happened to be
+    /// looking at; picking the heading was never the user's job.
+    ///
+    /// A no-op when the line is already right, so an edit that only fixes a typo
+    /// does not make the row jump.
+    @MainActor
+    func refile(_ text: String, of id: Int) async {
+        let line = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !line.isEmpty, line.aiQuestion == nil, let p = person(id),
+              let filed = await Intelligence.shared.filed(line, for: p),
               var fresh = person(id) else { return }
 
-        // pull the placeholder back out before filing it properly
+        let home = fresh.sections.first { $0.lines.contains(line) }
+        if home?.title.lowercased() == filed.heading.lowercased(), filed.line == line { return }
+
         for i in fresh.sections.indices {
-            fresh.sections[i].lines.removeAll { $0 == text }
+            fresh.sections[i].lines.removeAll { $0 == line }
         }
         fresh.sections.removeAll { $0.lines.isEmpty }
         append(filed.line, under: filed.heading, to: &fresh)
         fresh.summary = String(fresh.sections.flatMap(\.lines).joined(separator: " ").prefix(120))
-        update(fresh)
+        withAnimation(.smooth) { update(fresh) }
     }
 
     private func append(_ line: String, under heading: String, to p: inout Person) {
