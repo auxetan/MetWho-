@@ -156,16 +156,23 @@ final class Dictation {
 
                 if let result {
                     let heard = result.bestTranscription.formattedString
-                    // The recogniser often begins a new utterance without ever
-                    // setting isFinal — the string simply stops extending the
-                    // last one and starts again from nothing. Keying off isFinal
-                    // alone missed that, which is why a two-second pause still
-                    // wiped everything said before it.
-                    if Self.restarted(heard, after: self.heardNow) {
+                    // The one rule that holds however the recogniser behaves:
+                    // what is on screen may never shrink. Every result covers
+                    // only the utterance in progress, and a new utterance starts
+                    // that string over from nothing — so the moment folding it in
+                    // would produce less text than is already shown, the previous
+                    // utterance is banked instead of being written over.
+                    //
+                    // This replaces a comparison of first words, which lost
+                    // everything whenever two utterances happened to open on the
+                    // same one.
+                    if Self.continues(heard, from: self.heardNow) {
+                        self.heardNow = heard
+                    } else {
                         self.settled = Self.joined(self.settled, self.heardNow)
+                        self.heardNow = heard
                     }
-                    self.heardNow = heard
-                    self.transcript = Self.joined(self.settled, heard)
+                    self.transcript = Self.joined(self.settled, self.heardNow)
                 }
 
                 // an ended utterance is a pause, not a decision to stop talking
@@ -182,19 +189,23 @@ final class Dictation {
         }
     }
 
-    /// Whether the recogniser has thrown away the utterance it was building and
-    /// started a fresh one.
+    /// Whether a result extends the utterance in progress or begins a new one.
     ///
-    /// It revises what it heard as it goes — "Marie Dupont" becoming "Marie
-    /// Dupond" — so neither a plain inequality nor a prefix check works: a
-    /// correction inside the opening characters looks exactly like starting over.
-    /// What actually separates them is the first word. A revision keeps building
-    /// on the same opening; a new utterance begins somewhere else entirely.
-    private static func restarted(_ new: String, after old: String) -> Bool {
-        guard !old.isEmpty, !new.isEmpty else { return false }
-        if new.hasPrefix(old) { return false }   // still growing
-        let opening = { (s: String) in s.split(separator: " ").first?.lowercased() ?? "" }
-        return opening(old) != opening(new)
+    /// The recogniser revises as it goes — "Marie Dupont" becomes "Marie Dupond
+    /// arrive" — so a plain prefix test calls a correction a new sentence. It
+    /// also starts a fresh utterance after a pause without ever setting isFinal,
+    /// and that one has to be banked rather than written over.
+    ///
+    /// What separates them is how much of the opening survives. A revision keeps
+    /// nearly all of it; a new sentence keeps almost none. Comparing first words
+    /// was the previous attempt and it lost everything whenever two sentences
+    /// opened on the same one — "Il travaille chez Jacquemus" followed by "Il
+    /// veut faire une école".
+    private static func continues(_ new: String, from old: String) -> Bool {
+        guard !old.isEmpty else { return true }
+        if new.hasPrefix(old) { return true }
+        let shared = zip(new, old).prefix { $0 == $1 }.count
+        return Double(shared) >= Double(old.count) * 0.5
     }
 
     /// Joins two utterances without gluing words together or doubling a space.
