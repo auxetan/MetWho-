@@ -805,46 +805,18 @@ struct CaptureSheet: View {
                 }
                 .padding(.horizontal, M.gutter).padding(.top, 14)
 
-                ZStack(alignment: .topLeading) {
-                    if text.wrappedValue.isEmpty {
-                        Text("Who did you meet?")
-                            .font(.system(size: 17, weight: .semibold)).foregroundStyle(Color.ink3)
-                            .padding(.top, 8).padding(.leading, 5)
-                    }
-                    // TextEditor takes every point it is offered, so left to
-                    // itself the card filled the screen. A twin of the same text
-                    // is laid out invisibly and measured, and the editor is given
-                    // exactly that height — the card starts small and grows with
-                    // what is written, up to a ceiling where it scrolls instead.
-                    Text(text.wrappedValue.isEmpty ? " " : text.wrappedValue)
-                        .font(.system(size: 17, weight: .semibold))
-                        .padding(.vertical, 8).padding(.horizontal, 5)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background {
-                            GeometryReader { g in
-                                Color.clear.preference(key: TextHeight.self, value: g.size.height)
-                            }
-                        }
-                        .hidden()
-
-                    TextEditor(text: text)
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(Color.ink)
-                        .scrollContentBackground(.hidden)
-                        .focused($focused)
-                        .frame(height: min(max(grown, 132), 460))
+                // the ceiling is measured, not guessed: this reader owns exactly
+                // the space between the header and the toolbar, and shrinks when
+                // the keyboard arrives. A fixed ceiling was taller than that
+                // space, so the editor started scrolling — losing the top of the
+                // note — long before the card had reached the buttons
+                GeometryReader { room in
+                    card(ceiling: room.size.height)
+                        .frame(maxHeight: .infinity, alignment: .top)
                 }
-                .onPreferenceChange(TextHeight.self) { h in
-                    withAnimation(.snappy) { grown = h }
-                }
-                .padding(20)
-                .floatCard()
-                .padding(.horizontal, M.gutter).padding(.top, 56)
-
-                // TextEditor takes every point it is offered, so without a floor
-                // reserved here the card grew past the toolbar and ran off the
-                // bottom of the screen with the buttons floating on top of it
-                Spacer(minLength: M.circle + 46)
+                .padding(.horizontal, M.gutter)
+                .padding(.top, 56)
+                .padding(.bottom, M.circle + 46)
             }
 
             // sits in the bottom layer, not the scrolling content, so it can never
@@ -905,6 +877,54 @@ struct CaptureSheet: View {
     }
 
     private static let pending = "…"
+
+    /// Grows downward with the text and stops at `ceiling`, where it starts
+    /// scrolling instead — the newest line stays on screen and the oldest leaves
+    /// through the top, which is the only place there is left to put it.
+    private func card(ceiling: CGFloat) -> some View {
+        // A TextField that grows on its own axis, measured directly. The previous
+        // version laid an invisible twin of the text beside a TextEditor and
+        // matched their heights, but the twin never had the editor's internal
+        // text insets, so it under-counted the wrapped lines: the editor scrolled
+        // — losing the top of the note — while the card still had room below.
+        //
+        // Nothing is inferred here. The field reports the height it actually
+        // occupies, the card takes it, and only once that passes the ceiling does
+        // the scroll view start moving text off the top to keep the newest line
+        // in view.
+        ScrollViewReader { view in
+            ScrollView {
+                TextField("Who did you meet?", text: text, axis: .vertical)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Color.ink)
+                    .tint(Color.ink)
+                    .lineLimit(5...)
+                    .focused($focused)
+                    .background {
+                        GeometryReader { g in
+                            Color.clear.preference(key: TextHeight.self, value: g.size.height)
+                        }
+                    }
+                    .padding(20)
+                // a TextEditor scrolls itself to its caret; a TextField inside a
+                // ScrollView has nothing that does, so the newest line was being
+                // written below the fold. This anchor is what keeps it in view.
+                Color.clear.frame(height: 1).id("end")
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollIndicators(.hidden)
+            .onChange(of: text.wrappedValue) { _, _ in
+                view.scrollTo("end", anchor: .bottom)
+            }
+        }
+        // floor first, then ceiling: written the other way round the floor
+        // landed inside the min and the card collapsed to a single line
+        .frame(height: min(max(grown + 40, 172), max(172, ceiling)))
+        .onPreferenceChange(TextHeight.self) { h in
+            withAnimation(.snappy) { grown = h }
+        }
+        .floatCard()
+    }
 
     private var errorMessage: String? {
         switch dictation.status {

@@ -299,7 +299,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				CODE_SIGN_ENTITLEMENTS = MetWho/MetWho.entitlements;
 				MARKETING_VERSION = 1.0.0;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MetWho listens only while you hold Dictate, so you can say what you want to remember instead of typing it.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "MetWho reads the names in your address book so you can pick which of them to keep notes on. It never writes anything back.";
@@ -326,7 +326,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				CODE_SIGN_ENTITLEMENTS = MetWho/MetWho.entitlements;
 				MARKETING_VERSION = 1.0.0;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MetWho listens only while you hold Dictate, so you can say what you want to remember instead of typing it.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "MetWho reads the names in your address book so you can pick which of them to keep notes on. It never writes anything back.";
@@ -350,7 +350,7 @@
 				CODE_SIGN_ENTITLEMENTS = MetWhoWidget/MetWhoWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 92NDDAKFL6;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MetWhoWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = MetWho;
@@ -370,7 +370,7 @@
 				CODE_SIGN_ENTITLEMENTS = MetWhoWidget/MetWhoWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 92NDDAKFL6;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MetWhoWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = MetWho;
