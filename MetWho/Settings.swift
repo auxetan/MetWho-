@@ -669,7 +669,7 @@ struct DictationPage: View {
         @Bindable var store = store
         SubPage(title: "Dictation") {
             PageCard(icon: "mic.fill", title: "Dictation",
-                     desc: "Speech is turned into text on this device. When you correct yourself out loud, MetWho keeps the correction and drops the mistake.")
+                     desc: "Text appears on this iPhone as you talk. With a key connected the recording is also read once by OpenAI, which hears names better and works out the language itself, then deleted. When you correct yourself out loud, the correction is kept and the mistake dropped.")
 
             SectionLabel(text: "Language").padding(.top, 30)
             Grouped {
@@ -686,7 +686,9 @@ struct DictationPage: View {
                     }
                 }
             }
-            Text("Takes effect the next time you open a note.")
+            Text(AIConfig.shared.hasKey && AIConfig.shared.provider == .openAI
+                 ? "Only used when the recording cannot be sent. OpenAI works the language out on its own."
+                 : "Takes effect the next time you open a note.")
                 .font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Color.ink2)
                 .padding(.horizontal, 22).padding(.top, 9)
         }

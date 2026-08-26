@@ -37,6 +37,16 @@ final class Dictation {
     /// Everything the recogniser has already banked this session. `transcript`
     /// is this plus whatever is being said right now.
     private var settled = ""
+
+    /// The recording kept alongside the live transcript.
+    ///
+    /// Apple's recogniser is what makes text appear while you talk — free,
+    /// instant, on device. It is also the weaker transcriber: it mishears names,
+    /// punctuates poorly, and has to be told which language it is listening to.
+    /// So the audio is kept, and when a key is set it is sent for a second,
+    /// better reading once you stop.
+    private var writer: AVAudioFile?
+    private(set) var recording: URL?
     /// The utterance in progress, as the recogniser last reported it.
     private var heardNow = ""
 
@@ -129,11 +139,21 @@ final class Dictation {
                 status = .unavailable("No audio input. In the Simulator, enable Device → Microphone.")
                 return
             }
+            let box = FileManager.default.temporaryDirectory
+                .appendingPathComponent("dictation-\(UUID().uuidString).m4a")
+            writer = try? AVAudioFile(forWriting: box, settings: [
+                AVFormatIDKey: kAudioFormatMPEG4AAC,
+                AVSampleRateKey: format.sampleRate,
+                AVNumberOfChannelsKey: 1,
+            ])
+            recording = writer == nil ? nil : box
+
             input.removeTap(onBus: 0)
             // the tap feeds whichever request is current, not the one that existed
             // when the tap was installed — segments are replaced underneath it
             input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
                 self?.request?.append(buffer)
+                try? self?.writer?.write(from: buffer)
             }
 
             engine.prepare()
@@ -246,10 +266,18 @@ final class Dictation {
         teardown()
     }
 
+    /// Throws the audio away too. The bin clears the card; nothing should be left
+    /// on disk that the card no longer shows.
+    func discardRecording() {
+        if let recording { try? FileManager.default.removeItem(at: recording) }
+        recording = nil
+    }
+
     func clearError() { if case .idle = status {} else { status = .idle } }
 
     private func teardown() {
         engine.inputNode.removeTap(onBus: 0)
+        writer = nil   // closes the file so it can be read back
         if engine.isRunning { engine.stop() }
         request?.endAudio()
         task?.cancel()

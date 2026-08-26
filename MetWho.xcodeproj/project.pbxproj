@@ -299,11 +299,11 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				CODE_SIGN_ENTITLEMENTS = MetWho/MetWho.entitlements;
 				MARKETING_VERSION = 1.0.0;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 15;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MetWho listens only while you hold Dictate, so you can say what you want to remember instead of typing it.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "MetWho reads the names in your address book so you can pick which of them to keep notes on. It never writes anything back.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Speech is turned into text on this device. Nothing is sent anywhere.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Speech becomes text on this iPhone as you talk. If you have connected a transcription key in Settings, the recording is also sent there once, for a more accurate reading, and then deleted.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Attach photos to the people you have met.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -326,11 +326,11 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				CODE_SIGN_ENTITLEMENTS = MetWho/MetWho.entitlements;
 				MARKETING_VERSION = 1.0.0;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 15;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MetWho listens only while you hold Dictate, so you can say what you want to remember instead of typing it.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "MetWho reads the names in your address book so you can pick which of them to keep notes on. It never writes anything back.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Speech is turned into text on this device. Nothing is sent anywhere.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Speech becomes text on this iPhone as you talk. If you have connected a transcription key in Settings, the recording is also sent there once, for a more accurate reading, and then deleted.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Attach photos to the people you have met.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -350,7 +350,7 @@
 				CODE_SIGN_ENTITLEMENTS = MetWhoWidget/MetWhoWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 92NDDAKFL6;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 15;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MetWhoWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = MetWho;
@@ -370,7 +370,7 @@
 				CODE_SIGN_ENTITLEMENTS = MetWhoWidget/MetWhoWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 92NDDAKFL6;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 15;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MetWhoWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = MetWho;

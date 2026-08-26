@@ -13,9 +13,17 @@ import FoundationModels
 /// Both are asked for JSON in plain prose rather than through a schema API, so
 /// there is exactly one prompt to maintain per capability instead of two.
 protocol Brain: Sendable {
+    /// Audio in, text out. `nil` where the provider has no transcription
+    /// endpoint, which is every provider but OpenAI today.
+    func transcribe(_ audio: URL) async throws -> String?
+
     /// `json` asks the backend to constrain the output to a JSON object where it
     /// can. It is a hint, not a guarantee — callers still parse defensively.
     func reply(system: String, user: String, temperature: Double, json: Bool) async throws -> String
+}
+
+extension Brain {
+    func transcribe(_ audio: URL) async throws -> String? { nil }
 }
 
 enum BrainError: Error {
@@ -104,6 +112,55 @@ struct RemoteBrain: Brain {
         else { throw BrainError.empty }
         return text
     }
+
+    /// Multipart upload to `/audio/transcriptions`.
+    ///
+    /// Better than the on-device recogniser at names and punctuation, and it
+    /// works out the language on its own rather than being told — which is the
+    /// whole reason the language picker can stay a fallback rather than a
+    /// requirement. Cerebras has no equivalent endpoint, so this returns nil
+    /// there and the on-device transcript stands.
+    func transcribe(_ audio: URL) async throws -> String? {
+        guard provider == .openAI else { return nil }
+        let data = try Data(contentsOf: audio)
+        // a few seconds of silence is not worth three tenths of a cent
+        guard data.count > 8_000 else { return nil }
+
+        let boundary = "metwho.\(UUID().uuidString)"
+        var req = URLRequest(url: URL(string: "https://api.openai.com/v1/audio/transcriptions")!)
+        req.httpMethod = "POST"
+        req.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+        req.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        req.timeoutInterval = 60
+
+        var body = Data()
+        func field(_ name: String, _ value: String) {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n".data(using: .utf8)!)
+            body.append("\(value)\r\n".data(using: .utf8)!)
+        }
+        field("model", Self.transcriptionModel)
+        field("response_format", "text")
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"note.m4a\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: audio/m4a\r\n\r\n".data(using: .utf8)!)
+        body.append(data)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+        req.httpBody = body
+
+        let (out, resp) = try await URLSession.shared.data(for: req)
+        let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+        guard code == 200 else {
+            throw BrainError.http(code, String(data: out, encoding: .utf8) ?? "")
+        }
+        let text = String(data: out, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return text.isEmpty ? nil : text
+    }
+
+    /// The cheap one: $0.003 a minute, against $0.006 for the full model and for
+    /// whisper-1. A thirty-second note costs a tenth of a cent.
+    static let transcriptionModel = "gpt-4o-mini-transcribe"
 
     private struct Request: Encodable {
         struct Message: Encodable { let role: String; let content: String }

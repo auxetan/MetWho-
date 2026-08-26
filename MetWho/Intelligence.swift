@@ -244,6 +244,19 @@ final class Intelligence {
     /// under someone mid-sentence would be unusable. It returns `nil` on any
     /// failure, and the caller keeps the raw transcript, which is always still
     /// true even when it is untidy.
+    /// A second, better reading of what was said.
+    ///
+    /// Apple's recogniser gives the text that appears while you talk; this gives
+    /// the text worth keeping. It hears names the on-device model mangles, it
+    /// punctuates, and it works out the language itself rather than being told —
+    /// so a French note dictated on an English phone comes back in French.
+    ///
+    /// `nil` on any failure, and the caller keeps what was already on screen.
+    func transcribe(_ audio: URL) async -> String? {
+        guard let brain else { return nil }
+        return try? await brain.transcribe(audio)
+    }
+
     func tidy(spoken raw: String) async -> String? {
         let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard text.count > 8, let brain else { return nil }

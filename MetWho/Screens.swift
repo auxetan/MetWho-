@@ -847,7 +847,8 @@ struct CaptureSheet: View {
                     CircleButton(icon: "trash.fill",
                                  idle: !hasText,
                                  tint: hasText ? .danger : nil) {
-                        dictation.stop(); typed = ""; prefix = ""
+                        dictation.stop(); dictation.discardRecording()
+                        typed = ""; prefix = ""
                     }
                     .animation(.smooth(duration: 0.2), value: hasText)
                 }
@@ -1008,9 +1009,17 @@ struct CaptureSheet: View {
                 // cleaned once, on stop: rewriting under someone mid-sentence
                 // would be unusable, and the raw text is never lost if this fails
                 Task {
-                    guard let clean = await Intelligence.shared.tidy(spoken: spoken) else { return }
-                    guard typed == prefix + spoken else { return }   // they kept typing
-                    withAnimation(.smooth) { typed = prefix + clean }
+                    // the recording is the better source; the live transcript is
+                    // only what kept the screen alive while it was being made
+                    var best = spoken
+                    if let audio = dictation.recording,
+                       let heard = await Intelligence.shared.transcribe(audio) {
+                        best = heard
+                    }
+                    if let clean = await Intelligence.shared.tidy(spoken: best) { best = clean }
+                    dictation.discardRecording()
+                    guard best != spoken, typed == prefix + spoken else { return }
+                    withAnimation(.smooth) { typed = prefix + best }
                 }
             } else {
                 prefix = typed.isEmpty ? "" : typed + " "
