@@ -359,14 +359,14 @@ struct ProfileScreen: View {
                                 VStack(alignment: .leading, spacing: 0) {
                                     SectionLabel(text: sec.title)
                                     Grouped {
-                                        ForEach(Array(sec.lines.enumerated()), id: \.offset) { li, line in
+                                        ForEach(Array(sec.texts.enumerated()), id: \.offset) { li, line in
                                             if li > 0 { Hairline(leading: 20) }
                                             lineRow(si: si, li: li, text: line)
                                         }
                                         // the row being written, one past the end
-                                        if editing?.section == si, editing?.line == sec.lines.count {
+                                        if editing?.section == si, editing?.line == sec.texts.count {
                                             Hairline(leading: 20)
-                                            lineRow(si: si, li: sec.lines.count, text: "")
+                                            lineRow(si: si, li: sec.texts.count, text: "")
                                         }
                                         Hairline(leading: 20)
                                         Button {
@@ -374,7 +374,7 @@ struct ProfileScreen: View {
                                             // only: writing "" to the store left
                                             // an empty line behind every time the
                                             // field was abandoned before commit
-                                            editing = (si, sec.lines.count)
+                                            editing = (si, sec.texts.count)
                                             draft = ""
                                             lineFocused = true
                                         } label: {
@@ -436,6 +436,9 @@ struct ProfileScreen: View {
                         .padding(.horizontal, M.gutter)
                     }
                     .scrollIndicators(.hidden)
+                    // dragging the page away from the field is the other way
+                    // people expect to be done with it; losing focus commits
+                    .scrollDismissesKeyboard(.interactively)
                 }
 
                 BottomFade()
@@ -495,7 +498,16 @@ struct ProfileScreen: View {
                 .padding(.horizontal, 20).frame(minHeight: 52)
                 .onAppear { draft = text; lineFocused = true }
                 .onChange(of: lineFocused) { _, focused in if !focused { commit(si: si, li: li) } }
-                .onSubmit { commit(si: si, li: li) }
+                // A TextField on the vertical axis never sends onSubmit: return
+                // puts a newline in the text instead. That is why neither the
+                // return key nor anything else could save a new line — the only
+                // way out was losing focus, and nothing on this page took it.
+                .onChange(of: draft) { _, value in
+                    guard value.contains("\n") else { return }
+                    draft = value.replacingOccurrences(of: "\n", with: " ")
+                    lineFocused = false
+                    commit(si: si, li: li)
+                }
         } else {
             Button {
                 draft = text
@@ -528,12 +540,12 @@ struct ProfileScreen: View {
             p.sections[si].lines.remove(at: li)
             if p.sections[si].lines.isEmpty { p.sections.remove(at: si) }
         } else if isNew {
-            p.sections[si].lines.append(v)
+            p.sections[si].lines.append(Line(text: v))
         } else {
             guard p.sections[si].lines.indices.contains(li) else { return }
-            p.sections[si].lines[li] = v
+            p.sections[si].lines[li].text = v
         }
-        p.summary = String(p.sections.flatMap(\.lines).joined(separator: " ").prefix(120))
+        p.summary = String(p.sections.flatMap(\.texts).joined(separator: " ").prefix(120))
         store.update(p)
 
         if let question = v.aiQuestion {
@@ -552,17 +564,17 @@ struct ProfileScreen: View {
     private func answerInline(_ question: String, si: Int, li: Int) {
         guard var p = person, p.sections.indices.contains(si),
               p.sections[si].lines.indices.contains(li) else { return }
-        p.sections[si].lines[li] = "…"
+        p.sections[si].lines[li].text = "…"
         store.update(p)
 
-        let note = p.sections.flatMap(\.lines).joined(separator: "\n")
+        let note = p.sections.flatMap(\.texts).joined(separator: "\n")
         Task {
             let answer = await Intelligence.shared.ask(question, everyone: store.people, note: note, about: p)
             guard var fresh = person, fresh.sections.indices.contains(si),
                   fresh.sections[si].lines.indices.contains(li),
-                  fresh.sections[si].lines[li] == "…" else { return }
-            fresh.sections[si].lines[li] = answer ?? "@AI \(question)"
-            fresh.summary = String(fresh.sections.flatMap(\.lines).joined(separator: " ").prefix(120))
+                  fresh.sections[si].lines[li].text == "…" else { return }
+            fresh.sections[si].lines[li].text = answer ?? "@AI \(question)"
+            fresh.summary = String(fresh.sections.flatMap(\.texts).joined(separator: " ").prefix(120))
             store.update(fresh)
         }
     }

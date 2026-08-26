@@ -262,7 +262,7 @@ struct RefresherSheet: View {
     /// Capture order until the model reorders it — what you owe someone matters
     /// more than where you met them, but only the model can tell which is which.
     private func lines(for p: Person) -> [String] {
-        briefed.isEmpty ? Array(p.sections.flatMap(\.lines).prefix(3)) : briefed
+        briefed.isEmpty ? Array(p.sections.flatMap(\.texts).prefix(3)) : briefed
     }
 
     private func relative(_ d: Date) -> String {

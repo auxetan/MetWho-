@@ -275,7 +275,7 @@ final class Intelligence {
 
     /// The ten-second briefing before you see someone again.
     func brief(for person: Person) async -> [String]? {
-        let lines = person.sections.flatMap(\.lines)
+        let lines = person.sections.flatMap(\.texts)
         guard lines.count > 1, let brain else { return nil }
 
         let system = """
@@ -560,13 +560,21 @@ extension Person {
     /// one. "Moving in the autumn" is only resolvable against the year the note
     /// was written, and the card's own subtitle is too terse to say.
     var dossier: String {
-        let body = ([summary] + sections.flatMap(\.lines))
-            .filter { !$0.isEmpty }
-            .joined(separator: " ")
-            .prefix(240)
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_US_POSIX")
         f.dateFormat = "d MMM yyyy"
-        return "[\(id)] \(name) — met \(f.string(from: date)) — \(meta) — \(body)"
+
+        // every note carries the day it was written, so the model can tell a
+        // first meeting from what was learned on running into them again
+        var out = "[\(id)] \(name) — first met \(f.string(from: date)) — \(meta)"
+        if !summary.isEmpty { out += " — \(summary)" }
+        let dated = sections.flatMap { s in s.lines.map { (s.title, $0) } }
+            .filter { !$0.1.text.isEmpty }
+            .sorted { $0.1.at < $1.1.at }
+            .prefix(14)
+        for (heading, line) in dated {
+            out += "\n    \(f.string(from: line.at)) · \(heading): \(line.text)"
+        }
+        return out
     }
 }

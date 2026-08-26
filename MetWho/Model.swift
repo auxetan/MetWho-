@@ -2,10 +2,51 @@ import SwiftUI
 import Observation
 import WidgetKit
 
+/// One remembered thing, and when it was written down.
+///
+/// The date is what lets the app tell a first meeting from everything learned
+/// since. Someone met a fortnight ago and run into again this morning has two
+/// dates on their card, and a question about them should be answered knowing
+/// which fact is which age.
+struct Line: Codable, Hashable, Identifiable {
+    var id = UUID()
+    var text: String
+    var at: Date = .now
+}
+
 struct Section: Codable, Hashable, Identifiable {
     var id = UUID()
     var title: String
-    var lines: [String]
+    var lines: [Line]
+
+    var texts: [String] { lines.map(\.text) }
+
+    init(title: String, lines: [Line]) {
+        self.title = title
+        self.lines = lines
+    }
+
+    /// Undated convenience, for the sample people and for anywhere a date is
+    /// stamped straight afterwards.
+    init(title: String, lines: [String]) {
+        self.title = title
+        self.lines = lines.map { Line(text: $0) }
+    }
+
+    /// Cards written before lines carried dates stored plain strings. They decode
+    /// with `distantPast`, which `Store.load` then replaces with the day the
+    /// person was met — the only date those notes ever really had.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = (try? c.decode(UUID.self, forKey: .id)) ?? UUID()
+        title = try c.decode(String.self, forKey: .title)
+        if let dated = try? c.decode([Line].self, forKey: .lines) {
+            lines = dated
+        } else {
+            let plain = (try? c.decode([String].self, forKey: .lines)) ?? []
+            lines = plain.map { Line(text: $0, at: .distantPast) }
+        }
+    }
 }
 
 struct Person: Codable, Hashable, Identifiable {
@@ -22,7 +63,7 @@ struct Person: Codable, Hashable, Identifiable {
     var sections: [Section] = []
 
     var initial: String { String(name.prefix(1)) }
-    var haystack: String { ([name, summary, meta] + sections.flatMap(\.lines)).joined(separator: " ") }
+    var haystack: String { ([name, summary, meta] + sections.flatMap(\.texts)).joined(separator: " ") }
 }
 
 struct Category: Codable, Hashable, Identifiable {
@@ -101,10 +142,18 @@ final class Store {
             for i in people.indices {
                 for j in people[i].sections.indices {
                     people[i].sections[j].lines.removeAll {
-                        $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        $0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                     }
                 }
                 people[i].sections.removeAll { $0.lines.isEmpty }
+                // notes from before lines were dated: the day the person was met
+                // is the only date they ever had
+                for j in people[i].sections.indices {
+                    for k in people[i].sections[j].lines.indices
+                    where people[i].sections[j].lines[k].at == .distantPast {
+                        people[i].sections[j].lines[k].at = people[i].date
+                    }
+                }
             }
         } else {
             firstRun()
@@ -218,7 +267,7 @@ final class Store {
         let t = term.lowercased()
         guard !t.isEmpty else { return [] }
         return people.compactMap { p in
-            let fields = [p.name, p.summary, p.meta] + p.sections.flatMap(\.lines)
+            let fields = [p.name, p.summary, p.meta] + p.sections.flatMap(\.texts)
             guard let hit = fields.first(where: { $0.lowercased().contains(t) }) else { return nil }
             return (p, hit)
         }
@@ -473,23 +522,23 @@ final class Store {
               let filed = await Intelligence.shared.filed(line, for: p),
               var fresh = person(id) else { return }
 
-        let home = fresh.sections.first { $0.lines.contains(line) }
+        let home = fresh.sections.first { $0.texts.contains(line) }
         if home?.title.lowercased() == filed.heading.lowercased(), filed.line == line { return }
 
         for i in fresh.sections.indices {
-            fresh.sections[i].lines.removeAll { $0 == line }
+            fresh.sections[i].lines.removeAll { $0.text == line }
         }
         fresh.sections.removeAll { $0.lines.isEmpty }
         append(filed.line, under: filed.heading, to: &fresh)
-        fresh.summary = String(fresh.sections.flatMap(\.lines).joined(separator: " ").prefix(120))
+        fresh.summary = String(fresh.sections.flatMap(\.texts).joined(separator: " ").prefix(120))
         withAnimation(.smooth) { update(fresh) }
     }
 
     private func append(_ line: String, under heading: String, to p: inout Person) {
         if let i = p.sections.firstIndex(where: { $0.title.lowercased() == heading.lowercased() }) {
-            p.sections[i].lines.append(line)
+            p.sections[i].lines.append(Line(text: line))
         } else {
-            p.sections.append(Section(title: heading, lines: [line]))
+            p.sections.append(Section(title: heading, lines: [Line(text: line)]))
         }
     }
 
@@ -530,7 +579,7 @@ final class Store {
     private func repairNames() async {
         let broken = people.filter { !$0.archived && $0.name.readsLikeASentence }.prefix(5)
         for p in broken {
-            let raw = ([p.summary] + p.sections.flatMap(\.lines))
+            let raw = ([p.summary] + p.sections.flatMap(\.texts))
                 .filter { !$0.isEmpty }
                 .joined(separator: " ")
             guard raw.count > 10 else { continue }
