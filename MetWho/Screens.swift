@@ -654,26 +654,34 @@ struct SearchScreen: View {
     /// The answer sits above the matches rather than replacing them: asking a
     /// question should not throw away the list you could still scroll.
     private var answerCard: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .top, spacing: 10) {
-                Text(answer ?? "Thinking…")
-                    .font(.system(size: 16, weight: .semibold)).tracking(-0.2)
-                    .foregroundStyle(answer == nil ? Color.ink2 : Color.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                Button {
-                    withAnimation(.smooth) { answer = nil; asking = false }
-                } label: {
-                    Image(systemName: "xmark").font(.system(size: 12, weight: .heavy))
-                        .foregroundStyle(Color.ink2)
-                        .frame(width: 26, height: 26)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
+        // glass, not floatCard. floatCard fills with `surfaceHigh` over a `bg`
+        // one value below it, and that difference is exactly the edge that made
+        // this read as a panel let into the page rather than something floating
+        // over it. The art direction puts every floating control — toasts
+        // included — on the same glass surface, which has no fill of its own.
+        HStack(alignment: .top, spacing: 12) {
+            Text(answer ?? "Thinking…")
+                .font(.system(size: 16, weight: .semibold)).tracking(-0.2)
+                .foregroundStyle(answer == nil ? Color.ink2 : Color.ink)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                // the glyph is 13pt inside a 30pt tap target, so it sits 8.5pt
+                // off its own edge; the text is inset by the same amount on the
+                // other side and the two margins finally match
+                .padding(.leading, 8.5)
+                .padding(.vertical, 6)
+            Button {
+                withAnimation(.smooth) { answer = nil; asking = false }
+            } label: {
+                Image(systemName: "xmark").font(.system(size: 13, weight: .heavy))
+                    .foregroundStyle(Color.ink2)
+                    .frame(width: 30, height: 30)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
         }
-        .padding(18)
-        .floatCard()
+        .padding(11)
+        .glass(RoundedRectangle(cornerRadius: M.rFloat, style: .continuous))
     }
 
     /// Literal matches first — they are instant and always right. Anything the

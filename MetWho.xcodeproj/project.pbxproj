@@ -1,7 +1,8 @@
 // !$*UTF8*$!
 {
 	archiveVersion = 1;
-	classes = {};
+	classes = {
+	};
 	objectVersion = 56;
 	objects = {
 
@@ -10,41 +11,65 @@
 		AA0000000000000000000004 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000003 /* Theme.swift */; };
 		AA0000000000000000000006 /* Model.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000005 /* Model.swift */; };
 		AA0000000000000000000008 /* Dictation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000007 /* Dictation.swift */; };
-		AA0000000000000000000022 /* Intelligence.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000021 /* Intelligence.swift */; };
-		AA0000000000000000000024 /* Brain.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000023 /* Brain.swift */; };
-		AA0000000000000000000026 /* PhoneContacts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000025 /* PhoneContacts.swift */; };
-		AA0000000000000000000034 /* CloudSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000033 /* CloudSync.swift */; };
-		AA0000000000000000000032 /* Purchases.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000031 /* Purchases.swift */; };
-		AA0000000000000000000030 /* Nudges.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000029 /* Nudges.swift */; };
 		AA000000000000000000000A /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000009 /* HomeView.swift */; };
 		AA000000000000000000000C /* Screens.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000B /* Screens.swift */; };
 		AA000000000000000000000E /* Sheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000D /* Sheets.swift */; };
 		AA0000000000000000000010 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000F /* Settings.swift */; };
-		AA0000000000000000000051 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000050 /* Assets.xcassets */; };
+		AA0000000000000000000022 /* Intelligence.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000021 /* Intelligence.swift */; };
+		AA0000000000000000000024 /* Brain.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000023 /* Brain.swift */; };
+		AA0000000000000000000026 /* PhoneContacts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000025 /* PhoneContacts.swift */; };
 		AA0000000000000000000028 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000027 /* PrivacyInfo.xcprivacy */; };
+		AA0000000000000000000030 /* Nudges.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000029 /* Nudges.swift */; };
+		AA0000000000000000000032 /* Purchases.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000031 /* Purchases.swift */; };
+		AA0000000000000000000034 /* CloudSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000033 /* CloudSync.swift */; };
 		AA0000000000000000000036 /* Secrets.plist in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000035 /* Secrets.plist */; };
+		AA0000000000000000000051 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000050 /* Assets.xcassets */; };
 		AA000000000000000000007A /* MetWhoWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000079 /* MetWhoWidget.swift */; };
 		AA000000000000000000007D /* MetWhoWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000070 /* MetWhoWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		AA000000000000000000007F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA000000000000000000005A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA0000000000000000000074;
+			remoteInfo = MetWhoWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		AA000000000000000000007C /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				AA000000000000000000007D /* MetWhoWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		AA0000000000000000000001 /* MetWhoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetWhoApp.swift; sourceTree = "<group>"; };
 		AA0000000000000000000003 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		AA0000000000000000000005 /* Model.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Model.swift; sourceTree = "<group>"; };
 		AA0000000000000000000007 /* Dictation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dictation.swift; sourceTree = "<group>"; };
-		AA0000000000000000000021 /* Intelligence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Intelligence.swift; sourceTree = "<group>"; };
-		AA0000000000000000000023 /* Brain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Brain.swift; sourceTree = "<group>"; };
-		AA0000000000000000000025 /* PhoneContacts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneContacts.swift; sourceTree = "<group>"; };
-		AA0000000000000000000033 /* CloudSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSync.swift; sourceTree = "<group>"; };
-		AA0000000000000000000031 /* Purchases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Purchases.swift; sourceTree = "<group>"; };
-		AA0000000000000000000029 /* Nudges.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Nudges.swift; sourceTree = "<group>"; };
 		AA0000000000000000000009 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		AA000000000000000000000B /* Screens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Screens.swift; sourceTree = "<group>"; };
 		AA000000000000000000000D /* Sheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sheets.swift; sourceTree = "<group>"; };
 		AA000000000000000000000F /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
-		AA0000000000000000000050 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AA0000000000000000000021 /* Intelligence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Intelligence.swift; sourceTree = "<group>"; };
+		AA0000000000000000000023 /* Brain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Brain.swift; sourceTree = "<group>"; };
+		AA0000000000000000000025 /* PhoneContacts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneContacts.swift; sourceTree = "<group>"; };
 		AA0000000000000000000027 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		AA0000000000000000000029 /* Nudges.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Nudges.swift; sourceTree = "<group>"; };
+		AA0000000000000000000031 /* Purchases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Purchases.swift; sourceTree = "<group>"; };
+		AA0000000000000000000033 /* CloudSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSync.swift; sourceTree = "<group>"; };
 		AA0000000000000000000035 /* Secrets.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Secrets.plist; sourceTree = "<group>"; };
+		AA0000000000000000000050 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AA000000000000000000005C /* MetWho.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MetWho.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000000000000000000070 /* MetWhoWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MetWhoWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000000000000000000079 /* MetWhoWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetWhoWidget.swift; sourceTree = "<group>"; };
@@ -55,13 +80,15 @@
 		AA0000000000000000000061 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
-			files = ();
+			files = (
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AA0000000000000000000072 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
-			files = ();
+			files = (
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
@@ -120,24 +147,6 @@
 		};
 /* End PBXGroup section */
 
-/* Begin PBXContainerItemProxy section */
-		AA000000000000000000007F /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = AA000000000000000000005A /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = AA0000000000000000000074;
-			remoteInfo = MetWhoWidgetExtension;
-		};
-/* End PBXContainerItemProxy section */
-
-/* Begin PBXTargetDependency section */
-		AA000000000000000000007E /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = AA0000000000000000000074 /* MetWhoWidgetExtension */;
-			targetProxy = AA000000000000000000007F /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
 /* Begin PBXNativeTarget section */
 		AA000000000000000000005B /* MetWho */ = {
 			isa = PBXNativeTarget;
@@ -148,7 +157,8 @@
 				AA0000000000000000000062 /* Resources */,
 				AA000000000000000000007C /* Embed Foundation Extensions */,
 			);
-			buildRules = ();
+			buildRules = (
+			);
 			dependencies = (
 				AA000000000000000000007E /* PBXTargetDependency */,
 			);
@@ -165,8 +175,10 @@
 				AA0000000000000000000072 /* Frameworks */,
 				AA0000000000000000000073 /* Resources */,
 			);
-			buildRules = ();
-			dependencies = ();
+			buildRules = (
+			);
+			dependencies = (
+			);
 			name = MetWhoWidgetExtension;
 			productName = MetWhoWidgetExtension;
 			productReference = AA0000000000000000000070 /* MetWhoWidgetExtension.appex */;
@@ -180,16 +192,21 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1600;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 2660;
 				TargetAttributes = {
-					AA000000000000000000005B = { CreatedOnToolsVersion = 16.0; };
+					AA000000000000000000005B = {
+						CreatedOnToolsVersion = 16.0;
+					};
 				};
 			};
 			buildConfigurationList = AA0000000000000000000063 /* Build configuration list for PBXProject "MetWho" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
-			knownRegions = (en, Base);
+			knownRegions = (
+				en,
+				Base,
+			);
 			mainGroup = AA000000000000000000005D;
 			productRefGroup = AA000000000000000000005F /* Products */;
 			projectDirPath = "";
@@ -200,20 +217,6 @@
 			);
 		};
 /* End PBXProject section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		AA000000000000000000007C /* Embed Foundation Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
-			files = (
-				AA000000000000000000007D /* MetWhoWidgetExtension.appex in Embed Foundation Extensions */,
-			);
-			name = "Embed Foundation Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXResourcesBuildPhase section */
 		AA0000000000000000000062 /* Resources */ = {
@@ -229,7 +232,8 @@
 		AA0000000000000000000073 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
-			files = ();
+			files = (
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
@@ -266,16 +270,53 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		AA000000000000000000007E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA0000000000000000000074 /* MetWhoWidgetExtension */;
+			targetProxy = AA000000000000000000007F /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
 		AA0000000000000000000065 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				DEVELOPMENT_TEAM = 92NDDAKFL6;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -286,9 +327,37 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ENABLE_MODULES = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				DEVELOPMENT_TEAM = 92NDDAKFL6;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -298,22 +367,22 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 92NDDAKFL6;
-				GENERATE_INFOPLIST_FILE = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_ENTITLEMENTS = MetWho/MetWho.entitlements;
-				MARKETING_VERSION = 1.0.0;
-				CURRENT_PROJECT_VERSION = 15;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 16;
+				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MetWho listens only while you hold Dictate, so you can say what you want to remember instead of typing it.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "MetWho reads the names in your address book so you can pick which of them to keep notes on. It never writes anything back.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Speech becomes text on this iPhone as you talk. If you have connected a transcription key in Settings, the recording is also sent there once, for a more accurate reading, and then deleted.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MetWho listens only while you hold Dictate, so you can say what you want to remember instead of typing it.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Attach photos to the people you have met.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Speech becomes text on this iPhone as you talk. If you have connected a transcription key in Settings, the recording is also sent there once, for a more accurate reading, and then deleted.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.metwho.app;
 				PRODUCT_NAME = MetWho;
 				SWIFT_VERSION = 5.0;
@@ -325,22 +394,22 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 92NDDAKFL6;
-				GENERATE_INFOPLIST_FILE = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_ENTITLEMENTS = MetWho/MetWho.entitlements;
-				MARKETING_VERSION = 1.0.0;
-				CURRENT_PROJECT_VERSION = 15;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 16;
+				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MetWho listens only while you hold Dictate, so you can say what you want to remember instead of typing it.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "MetWho reads the names in your address book so you can pick which of them to keep notes on. It never writes anything back.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Speech becomes text on this iPhone as you talk. If you have connected a transcription key in Settings, the recording is also sent there once, for a more accurate reading, and then deleted.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "MetWho listens only while you hold Dictate, so you can say what you want to remember instead of typing it.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Attach photos to the people you have met.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Speech becomes text on this iPhone as you talk. If you have connected a transcription key in Settings, the recording is also sent there once, for a more accurate reading, and then deleted.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.metwho.app;
 				PRODUCT_NAME = MetWho;
 				SWIFT_VERSION = 5.0;
@@ -351,10 +420,10 @@
 		AA0000000000000000000076 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_ENTITLEMENTS = MetWhoWidget/MetWhoWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 92NDDAKFL6;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MetWhoWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = MetWho;
@@ -371,10 +440,10 @@
 		AA0000000000000000000077 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_ENTITLEMENTS = MetWhoWidget/MetWhoWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 92NDDAKFL6;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = MetWhoWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = MetWho;
