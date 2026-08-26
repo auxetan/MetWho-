@@ -47,7 +47,26 @@ final class Dictation {
     /// it is a card full of plausible nonsense. `SFSpeechRecognizer()` with no
     /// locale uses the user's own, and only falls back when that language has no
     /// recogniser at all.
-    private let recognizer = SFSpeechRecognizer() ?? SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+    /// Set from `Prefs.dictation` before listening starts; nil follows the phone.
+    static var preferred: String = ""
+
+    private let recognizer: SFSpeechRecognizer? = {
+        if !Dictation.preferred.isEmpty,
+           let picked = SFSpeechRecognizer(locale: Locale(identifier: Dictation.preferred)) {
+            return picked
+        }
+        return SFSpeechRecognizer() ?? SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+    }()
+
+    /// Every language this phone can transcribe, newest recognisers first.
+    static var available: [(id: String, name: String)] {
+        SFSpeechRecognizer.supportedLocales()
+            .map { loc in
+                (loc.identifier,
+                 Locale.current.localizedString(forIdentifier: loc.identifier) ?? loc.identifier)
+            }
+            .sorted { $0.1 < $1.1 }
+    }
 
     /// What the recogniser will actually listen for, for the UI to say out loud.
     var language: String {

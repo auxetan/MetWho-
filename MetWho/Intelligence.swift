@@ -196,7 +196,7 @@ final class Intelligence {
     ///
     /// `nil` when there is no brain, and the caller files it under the section it
     /// most resembles instead.
-    func filed(_ line: String, for person: Person) async -> (heading: String, line: String)? {
+    func filed(_ line: String, for person: Person) async -> (heading: String, line: String, place: String)? {
         let text = line.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, let brain else { return nil }
         let headings = person.sections.map(\.title)
@@ -204,7 +204,7 @@ final class Intelligence {
         You file one new note under a heading on someone's contact card.
 
         Reply with JSON only, no prose, no code fence:
-        {"heading":"","line":""}
+        {"heading":"","line":"","place":""}
 
         Rules:
         - "heading" is one of the existing headings when the note fits under one: \
@@ -216,6 +216,10 @@ final class Intelligence {
         every fact, add none.
         - Something the writer owes or intends to do belongs under a next-step \
         heading, not with facts about the person.
+        - "place": the town or city this note says the person is based in, and \
+        only that. "Jean habite à New York" gives "New York". A place they are \
+        merely visiting, or where a single meeting happened, is not it — leave \
+        the field empty. Empty whenever the note names no home at all.
         """
         let user = "Card for \(person.name):\n\(person.dossier)\n\nNew note: \(text)"
 
@@ -224,7 +228,52 @@ final class Intelligence {
         let heading = out.heading.orEmpty.trimmed
         let tidied = out.line.orEmpty.trimmed
         guard !heading.isEmpty else { return nil }
-        return (heading, tidied.isEmpty ? text : tidied)
+        return (heading, tidied.isEmpty ? text : tidied, out.place.orEmpty.trimmed)
+    }
+
+    // MARK: - Dictation
+
+    /// Turns what was said into what was meant.
+    ///
+    /// The recogniser transcribes speech, and speech is not prose: it has no
+    /// commas, and it contains the speaker changing their mind out loud. "Juan
+    /// works in finance, huh no he works in retail" is one sentence to a
+    /// recogniser and two facts to a reader, one of which is wrong.
+    ///
+    /// This runs once when dictation stops, never while it is live — rewriting
+    /// under someone mid-sentence would be unusable. It returns `nil` on any
+    /// failure, and the caller keeps the raw transcript, which is always still
+    /// true even when it is untidy.
+    func tidy(spoken raw: String) async -> String? {
+        let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard text.count > 8, let brain else { return nil }
+
+        let system = """
+        You clean up dictated speech into the sentence the speaker meant.
+
+        Rules:
+        - Punctuate and capitalise properly. Speech arrives with none of it.
+        - When the speaker corrects themselves, keep only the correction and \
+        delete both the mistake and the words marking it. "Juan works in finance, \
+        huh no he works in retail" becomes "Juan works in retail". The wrong fact \
+        must not survive anywhere in the output.
+        - The same holds in every language: "non pardon", "enfin non", "je veux \
+        dire", "I mean", "sorry no", "scratch that".
+        - Drop filler: um, euh, uh, hmm, like, you know, bah.
+        - Change nothing else. Do not summarise, do not reorder, do not add a \
+        fact, do not translate. Every word that was not filler or a retracted \
+        mistake stays.
+        - Reply in the language it was spoken in, with the cleaned text and \
+        nothing else — no quotes, no preamble.
+        """
+
+        guard let out = try? await brain.reply(system: system, user: text,
+                                               temperature: 0.1, json: false)
+        else { return nil }
+        let cleaned = out.strippedFence.trimmed
+        // a model that answers with more than was said has started inventing
+        guard !cleaned.isEmpty, cleaned.count < text.count * 2 else { return nil }
+        return cleaned
     }
 
     // MARK: - Search
@@ -438,6 +487,7 @@ private struct RemoteAnswer: Decodable {
 private struct RemoteFiled: Decodable {
     var heading: String?
     var line: String?
+    var place: String?
 }
 
 private struct RemoteBrief: Decodable {

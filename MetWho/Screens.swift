@@ -5,7 +5,7 @@ enum Route: Hashable {
     case profile(Int)
     case search, settings
     case notifications, archivedList, sortMode, icloud, contacts, appearance, widget, about, paywall
-    case intelligence
+    case intelligence, dictation
 }
 
 // MARK: - Home
@@ -1002,8 +1002,16 @@ struct CaptureSheet: View {
         let live = dictation.status.isListening
         return Button {
             if live {
-                typed = prefix + dictation.transcript
+                let spoken = dictation.transcript
+                typed = prefix + spoken
                 dictation.stop()
+                // cleaned once, on stop: rewriting under someone mid-sentence
+                // would be unusable, and the raw text is never lost if this fails
+                Task {
+                    guard let clean = await Intelligence.shared.tidy(spoken: spoken) else { return }
+                    guard typed == prefix + spoken else { return }   // they kept typing
+                    withAnimation(.smooth) { typed = prefix + clean }
+                }
             } else {
                 prefix = typed.isEmpty ? "" : typed + " "
                 focused = false

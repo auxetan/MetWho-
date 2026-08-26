@@ -64,6 +64,32 @@ struct Person: Codable, Hashable, Identifiable {
 
     var initial: String { String(name.prefix(1)) }
     var haystack: String { ([name, summary, meta] + sections.flatMap(\.texts)).joined(separator: " ") }
+
+    init(id: Int, name: String, cat: String, meta: String, date: Date,
+         summary: String, place: String, archived: Bool = false,
+         avatar: Data? = nil, photos: [Data] = [], sections: [Section] = []) {
+        self.id = id; self.name = name; self.cat = cat; self.meta = meta
+        self.date = date; self.summary = summary; self.place = place
+        self.archived = archived; self.avatar = avatar
+        self.photos = photos; self.sections = sections
+    }
+
+    /// Lenient for the same reason `Prefs` is: one added field must never cost
+    /// somebody their notes.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(Int.self, forKey: .id)
+        name = (try? c.decode(String.self, forKey: .name)) ?? ""
+        cat = (try? c.decode(String.self, forKey: .cat)) ?? "unsorted"
+        meta = (try? c.decode(String.self, forKey: .meta)) ?? ""
+        date = (try? c.decode(Date.self, forKey: .date)) ?? .now
+        summary = (try? c.decode(String.self, forKey: .summary)) ?? ""
+        place = (try? c.decode(String.self, forKey: .place)) ?? ""
+        archived = (try? c.decode(Bool.self, forKey: .archived)) ?? false
+        avatar = try? c.decodeIfPresent(Data.self, forKey: .avatar)
+        photos = (try? c.decode([Data].self, forKey: .photos)) ?? []
+        sections = (try? c.decode([Section].self, forKey: .sections)) ?? []
+    }
 }
 
 struct Category: Codable, Hashable, Identifiable {
@@ -93,6 +119,32 @@ struct Prefs: Codable {
     /// Empty until the person says otherwise. It used to ship as "Auguste", which
     /// greeted every single user on the App Store by the developer's name.
     var name = ""
+    /// Which language Dictate listens for. Empty means follow the phone, which is
+    /// right until someone keeps notes in a language they have not set it to.
+    var dictation = ""
+
+    init() {}
+
+    /// Every field optional, every field defaulted.
+    ///
+    /// Swift's synthesised decoder does not fall back to a property's default
+    /// when the key is missing — it throws. So adding one field to this struct
+    /// made every existing snapshot fail to decode, `load()` fell through to
+    /// `firstRun()`, and the app came up empty with the onboarding showing. That
+    /// is the whole address book gone on upgrade, and it happened here in
+    /// testing. Nothing in this file may rely on the synthesised decoder again.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        theme = (try? c.decode(ThemeMode.self, forKey: .theme)) ?? .system
+        sort = (try? c.decode(SortMode.self, forKey: .sort)) ?? .recent
+        gallery = (try? c.decode(Bool.self, forKey: .gallery)) ?? false
+        cat = (try? c.decode(String.self, forKey: .cat)) ?? "all"
+        onboarded = (try? c.decode(Bool.self, forKey: .onboarded)) ?? false
+        notifications = (try? c.decode(Bool.self, forKey: .notifications)) ?? true
+        icloud = (try? c.decode(Bool.self, forKey: .icloud)) ?? true
+        name = (try? c.decode(String.self, forKey: .name)) ?? ""
+        dictation = (try? c.decode(String.self, forKey: .dictation)) ?? ""
+    }
 }
 
 @Observable
@@ -122,6 +174,22 @@ final class Store {
         var people: [Person]; var categories: [Category]; var order: [Int]
         var prefs: Prefs; var nextID: Int
         var updatedAt: Date = .distantPast
+
+        init(people: [Person], categories: [Category], order: [Int],
+             prefs: Prefs, nextID: Int, updatedAt: Date) {
+            self.people = people; self.categories = categories; self.order = order
+            self.prefs = prefs; self.nextID = nextID; self.updatedAt = updatedAt
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            people = (try? c.decode([Person].self, forKey: .people)) ?? []
+            categories = (try? c.decode([Category].self, forKey: .categories)) ?? []
+            order = (try? c.decode([Int].self, forKey: .order)) ?? []
+            prefs = (try? c.decode(Prefs.self, forKey: .prefs)) ?? Prefs()
+            nextID = (try? c.decode(Int.self, forKey: .nextID)) ?? 1
+            updatedAt = (try? c.decode(Date.self, forKey: .updatedAt)) ?? .distantPast
+        }
     }
 
     private var updatedAt: Date = .distantPast
@@ -522,8 +590,18 @@ final class Store {
               let filed = await Intelligence.shared.filed(line, for: p),
               var fresh = person(id) else { return }
 
+        // a note naming where someone lives is what puts them on the map: the
+        // gallery groups by `place`, and nothing but capture ever set it, so
+        // "Jean habite à New York" written months later never reached the globe
+        let moved = !filed.place.isEmpty && filed.place != fresh.place
+        if moved {
+            fresh.place = filed.place
+            let f = DateFormatter(); f.dateFormat = "MMM d"
+            fresh.meta = "\(filed.place) · \(f.string(from: fresh.date))"
+        }
+
         let home = fresh.sections.first { $0.texts.contains(line) }
-        if home?.title.lowercased() == filed.heading.lowercased(), filed.line == line { return }
+        if !moved, home?.title.lowercased() == filed.heading.lowercased(), filed.line == line { return }
 
         for i in fresh.sections.indices {
             fresh.sections[i].lines.removeAll { $0.text == line }

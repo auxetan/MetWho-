@@ -136,6 +136,12 @@ struct SettingsScreen: View {
                             Hairline()
                             SettingsRow(icon: "square.grid.2x2.fill", label: "Widget") { path.append(.widget) }
                             Hairline(leading: 20)
+                            SettingsRow(icon: "mic.fill", label: "Dictation",
+                                        value: store.prefs.dictation.isEmpty ? nil
+                                             : Locale.current.localizedString(forIdentifier: store.prefs.dictation)) {
+                                path.append(.dictation)
+                            }
+                            Hairline()
                             SettingsRow(icon: "wand.and.stars.inverse", label: "Intelligence",
                                         value: AIConfig.shared.hasKey ? "On" : nil) { path.append(.intelligence) }
                         }
@@ -646,6 +652,43 @@ struct IntelligencePage: View {
                             sub: "Type @AI followed by a question on its own line, press return, and the answer replaces it.",
                             accessory: .none)
             }
+        }
+    }
+}
+
+/// Which language Dictate listens for.
+///
+/// `SFSpeechRecognizer` needs the language up front — it cannot work out what it
+/// is hearing — so this is a choice rather than something detected. Following
+/// the phone is right until someone keeps notes in a language they never set it
+/// to, which is exactly the case this page exists for.
+struct DictationPage: View {
+    @Environment(Store.self) private var store
+
+    var body: some View {
+        @Bindable var store = store
+        SubPage(title: "Dictation") {
+            PageCard(icon: "mic.fill", title: "Dictation",
+                     desc: "Speech is turned into text on this device. When you correct yourself out loud, MetWho keeps the correction and drops the mistake.")
+
+            SectionLabel(text: "Language").padding(.top, 30)
+            Grouped {
+                SettingsRow(label: "Follow this iPhone",
+                            sub: Locale.current.localizedString(forIdentifier: Locale.current.identifier),
+                            accessory: store.prefs.dictation.isEmpty ? .check : .none) {
+                    store.prefs.dictation = ""; store.save()
+                }
+                ForEach(Dictation.available, id: \.id) { lang in
+                    Hairline(leading: 20)
+                    SettingsRow(label: lang.name,
+                                accessory: store.prefs.dictation == lang.id ? .check : .none) {
+                        store.prefs.dictation = lang.id; store.save()
+                    }
+                }
+            }
+            Text("Takes effect the next time you open a note.")
+                .font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Color.ink2)
+                .padding(.horizontal, 22).padding(.top, 9)
         }
     }
 }

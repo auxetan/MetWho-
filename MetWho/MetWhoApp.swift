@@ -26,6 +26,7 @@ struct RootView: View {
         // after onboarding only: filing the demo seed on a first run would move
         // people the user has not even met yet
         .task {
+            Dictation.preferred = store.prefs.dictation
             await Purchases.shared.load()
             guard store.prefs.onboarded else { return }
             if store.prefs.notifications { await Nudges.reschedule(for: store.people) }
@@ -48,6 +49,7 @@ func destination(_ route: Route, path: Binding<[Route]>, toast: Binding<ToastSta
     case .appearance:       AppearancePage()
     case .widget:           WidgetPage()
     case .intelligence:     IntelligencePage()
+    case .dictation:        DictationPage()
     case .about:            AboutPage()
     case .paywall:          PaywallScreen()
     }
