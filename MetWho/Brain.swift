@@ -52,13 +52,33 @@ enum Provider: String, CaseIterable {
         }
     }
 
-    /// The cheapest model on each service that can still hold a schema in its
-    /// head. Both retire models faster than an app update ships, which is why
-    /// the field is editable in settings.
+    /// The smallest model that can still hold a schema in its head.
+    ///
+    /// Almost every call this app makes is short structured extraction — pull a
+    /// name and a place out of a sentence, pick a heading, tidy a transcript —
+    /// which is what a nano model is for. `gpt-5-nano` is $0.05 in and $0.40 out
+    /// per million tokens, against $0.20 and $1.20 for the frontier tier that
+    /// was here before: four times cheaper on the way in for work that never
+    /// needed the bigger model.
+    ///
+    /// The one place capability shows is `ask` and `answer`, which reason over
+    /// the whole address book. If those come back thin, the field in settings
+    /// takes `gpt-5-mini`.
     var defaultModel: String {
         switch self {
-        case .openAI: "gpt-5.6-luna"
+        case .openAI: "gpt-5-nano"
         case .cerebras: "gpt-oss-120b"
+        }
+    }
+
+    /// Defaults this app has shipped and since moved on from. A stored choice
+    /// that matches one of these was never a decision — it was yesterday's
+    /// default — so it follows today's rather than pinning someone to a model
+    /// they never picked.
+    var superseded: Set<String> {
+        switch self {
+        case .openAI: ["gpt-5.6-luna", "gpt-4o-mini", "llama-3.3-70b"]
+        case .cerebras: ["llama-3.3-70b"]
         }
     }
 
@@ -263,7 +283,9 @@ final class AIConfig {
     private static func modelKey(_ p: Provider) -> String { "metwho.ai.model.\(p.rawValue)" }
 
     private static func storedModel(for p: Provider) -> String {
-        UserDefaults.standard.string(forKey: modelKey(p)) ?? p.defaultModel
+        guard let saved = UserDefaults.standard.string(forKey: modelKey(p)),
+              !saved.isEmpty, !p.superseded.contains(saved) else { return p.defaultModel }
+        return saved
     }
 
     /// Remote first: it is both better and faster than the 3B on-device model.
