@@ -230,8 +230,35 @@ final class AIConfig {
         model = Self.storedModel(for: Provider.detect(stored))
     }
 
-    var provider: Provider { Provider.detect(key) }
-    var hasKey: Bool { !key.trimmingCharacters(in: .whitespaces).isEmpty }
+    /// The key shipped inside the app, for people who never open Settings.
+    ///
+    /// Read from `Secrets.plist`, which is kept out of the repository — this one
+    /// is public, and a key pushed to it is scraped and spent before anyone
+    /// notices. Keeping it out of git does not make it private: it is in the
+    /// binary, and an .ipa is a zip. Anyone who wants it can have it, and every
+    /// call they make is billed to whoever owns it.
+    ///
+    /// A key entered in Settings always wins, so anyone who brings their own
+    /// spends their own.
+    static let bundled: String = {
+        guard let url = Bundle.main.url(forResource: "Secrets", withExtension: "plist"),
+              let data = try? Data(contentsOf: url),
+              let plist = try? PropertyListSerialization.propertyList(from: data, format: nil),
+              let key = (plist as? [String: Any])?["OpenAIKey"] as? String
+        else { return "" }
+        return key.trimmingCharacters(in: .whitespacesAndNewlines)
+    }()
+
+    /// What the app actually authenticates with.
+    private var effectiveKey: String {
+        let own = key.trimmingCharacters(in: .whitespaces)
+        return own.isEmpty ? Self.bundled : own
+    }
+
+    var provider: Provider { Provider.detect(effectiveKey) }
+    var hasKey: Bool { !effectiveKey.isEmpty }
+    /// Whether this is the user's own key rather than the one in the binary.
+    var hasOwnKey: Bool { !key.trimmingCharacters(in: .whitespaces).isEmpty }
 
     private static func modelKey(_ p: Provider) -> String { "metwho.ai.model.\(p.rawValue)" }
 
@@ -244,15 +271,13 @@ final class AIConfig {
     /// heuristic it already had.
     var brain: Brain? {
         if hasKey {
-            return RemoteBrain(provider: provider,
-                               key: key.trimmingCharacters(in: .whitespaces),
-                               model: model)
+            return RemoteBrain(provider: provider, key: effectiveKey, model: model)
         }
         return OnDeviceBrain.isAvailable ? OnDeviceBrain() : nil
     }
 
     var status: String {
-        if hasKey { return "\(provider.label) · \(model)" }
+        if hasKey { return "\(provider.label) · \(model)\(hasOwnKey ? "" : " · included")" }
         if OnDeviceBrain.isAvailable { return "On device" }
         return "Not connected"
     }

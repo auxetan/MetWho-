@@ -1,3 +1,8 @@
 build/
 *.xcuserstate
 xcuserdata/
+
+# The shipped API key. Never committed: this repository is public, and a key
+# pushed here is scraped and spent before anyone notices. Secrets.example.plist
+# is the template; Secrets.plist is yours and stays on your machine.
+MetWho/Secrets.plist

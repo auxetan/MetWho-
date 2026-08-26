@@ -22,6 +22,7 @@
 		AA0000000000000000000010 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000F /* Settings.swift */; };
 		AA0000000000000000000051 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000050 /* Assets.xcassets */; };
 		AA0000000000000000000028 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000027 /* PrivacyInfo.xcprivacy */; };
+		AA0000000000000000000036 /* Secrets.plist in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000035 /* Secrets.plist */; };
 		AA000000000000000000007A /* MetWhoWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000079 /* MetWhoWidget.swift */; };
 		AA000000000000000000007D /* MetWhoWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000070 /* MetWhoWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
@@ -43,6 +44,7 @@
 		AA000000000000000000000F /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		AA0000000000000000000050 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AA0000000000000000000027 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		AA0000000000000000000035 /* Secrets.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Secrets.plist; sourceTree = "<group>"; };
 		AA000000000000000000005C /* MetWho.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MetWho.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000000000000000000070 /* MetWhoWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MetWhoWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000000000000000000079 /* MetWhoWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetWhoWidget.swift; sourceTree = "<group>"; };
@@ -93,6 +95,7 @@
 				AA000000000000000000000F /* Settings.swift */,
 				AA0000000000000000000050 /* Assets.xcassets */,
 				AA0000000000000000000027 /* PrivacyInfo.xcprivacy */,
+				AA0000000000000000000035 /* Secrets.plist */,
 			);
 			path = MetWho;
 			sourceTree = "<group>";
@@ -219,6 +222,7 @@
 			files = (
 				AA0000000000000000000051 /* Assets.xcassets in Resources */,
 				AA0000000000000000000028 /* PrivacyInfo.xcprivacy in Resources */,
+				AA0000000000000000000036 /* Secrets.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
